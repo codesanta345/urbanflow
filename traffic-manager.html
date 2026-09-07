@@ -27,13 +27,20 @@
       <a href="admin.html" class="nav-btn-icon">
         <i class="fa-solid fa-gear"></i> Admin View
       </a>
-      <div class="user-badge">
-        <div class="avatar-circle" id="navUserAvatar" style="background:#F59E0B;">U</div>
-        <span id="navUserName">User</span>
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar" style="background:#F59E0B;">U</div>
+          <span id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Traffic Authority Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
       </div>
-      <button class="logout-btn" onclick="UrbanFlowData.logout()">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
     </div>
   </nav>
 
@@ -41,30 +48,38 @@
   <main class="hub-main">
     <div class="hub-welcome">
       <div>
-        <h1>Smart Signal Controller & Incident Operations</h1>
-        <p>Real-time approach demand balancing, signal timing optimization, and incident verification desk.</p>
+        <h1 id="tmPageTitle">Smart Signal Controller</h1>
+        <p id="tmPageSubtitle">Real-time approach demand balancing and signal timing optimization.</p>
       </div>
     </div>
 
-    <!-- Active Emergency Alert Banner (if active) -->
-    <div id="tmEmergencyNotice" style="display:none; margin-bottom: 24px; background: #FEE2E2; border: 2px solid #EF4444; border-radius: var(--radius-md); padding: 16px 20px; color: #991B1B; align-items: center; justify-content: space-between;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 24px;">🚨</span>
-        <div>
-          <h4 style="font-size: 15px; font-weight: 700; margin: 0;">EMERGENCY PREEMPTION ACTIVE</h4>
-          <p style="font-size: 13px; margin: 0;">An emergency vehicle is on corridor. Approach signal timings are locked to priority green.</p>
+    <!-- ===== SIGNAL CONTROL VIEW ===== -->
+    <div id="signalView">
+
+      <!-- Active Emergency Alert Banner (if active) -->
+      <div id="tmEmergencyNotice" style="display:none; margin-bottom: 24px; background: #FEE2E2; border: 2px solid #EF4444; border-radius: var(--radius-md); padding: 16px 20px; color: #991B1B; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">🚨</span>
+          <div>
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0;">EMERGENCY PREEMPTION ACTIVE</h4>
+            <p style="font-size: 13px; margin: 0;">An emergency vehicle is on corridor. Approach signal timings are locked to priority green.</p>
+          </div>
         </div>
+        <button class="logout-btn" onclick="resetEmergencyPreemption()">Reset Override</button>
       </div>
-      <button class="logout-btn" onclick="resetEmergencyPreemption()">Reset Override</button>
-    </div>
 
-    <!-- ===== SECTION 1: SMART SIGNAL LOGIC (PDF Figure 5) ===== -->
-    <div class="signal-view-grid">
-      
+      <!-- SMART SIGNAL LOGIC (PDF Figure 5) -->
+      <div class="signal-view-grid">
+
       <!-- Left: Interactive Intersection Box Diagram -->
       <div class="signal-diagram-card">
         <h3>Smart Traffic Signal Logic</h3>
         <p>Adjust signal timing dynamically based on real-time vehicle density on each approach direction</p>
+
+        <div class="input-group" style="margin-bottom: 16px;">
+          <label><i class="fa-solid fa-map-pin" style="color: var(--purple-vibrant);"></i> Select Intersection / Area</label>
+          <select id="intersectionSelect" onchange="handleIntersectionChange()"></select>
+        </div>
 
         <div class="intersection-box">
           <!-- Road Crossings -->
@@ -82,28 +97,28 @@
           </div>
 
           <!-- North Approach Tag -->
-          <div class="approach-tag north">
+          <div class="approach-tag north" id="approachTagNorth">
             <div>North Approach</div>
             <div class="approach-count" id="diagNorthCount">800 vehicles</div>
             <div class="approach-green-time" id="diagNorthGreen">Green: 45s</div>
           </div>
 
           <!-- South Approach Tag -->
-          <div class="approach-tag south">
+          <div class="approach-tag south" id="approachTagSouth">
             <div>South Approach</div>
             <div class="approach-count" id="diagSouthCount">650 vehicles</div>
             <div class="approach-green-time" id="diagSouthGreen">Green: 35s</div>
           </div>
 
           <!-- East Approach Tag -->
-          <div class="approach-tag east">
+          <div class="approach-tag east" id="approachTagEast">
             <div>East Approach</div>
             <div class="approach-count" id="diagEastCount">200 vehicles</div>
             <div class="approach-green-time" id="diagEastGreen" style="color:#EF4444;">Green: 15s</div>
           </div>
 
           <!-- West Approach Tag -->
-          <div class="approach-tag west">
+          <div class="approach-tag west" id="approachTagWest">
             <div>West Approach</div>
             <div class="approach-count" id="diagWestCount">150 vehicles</div>
             <div class="approach-green-time" id="diagWestGreen" style="color:#EF4444;">Green: 15s</div>
@@ -111,18 +126,23 @@
         </div>
 
         <div style="margin-top: 24px; font-size: 13px; color: #6B7280;">
-          <strong>Intersection:</strong> Phase 7 Interchange &bull; <strong>Cycle Time:</strong> 110 seconds
+          <strong>Intersection:</strong> <span id="diagIntersectionName">Phase 7 Interchange</span> &bull;
+          <strong>Type:</strong> <span id="diagJunctionType">4-Way</span> &bull;
+          <strong>Cycle Time:</strong> <span id="diagCycleTime">110</span> seconds
         </div>
       </div>
 
       <!-- Right: Real-time Green Time Allocation & Controls -->
       <div class="signal-controls-card">
         <h3>Adaptive Timing Allocation</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: -8px; margin-bottom: 16px;">
+          Now configuring: <strong id="controlsIntersectionName" style="color: #C4B5FD;">Phase 7 Interchange</strong>
+        </p>
 
         <!-- North Row -->
-        <div class="approach-control-row">
+        <div class="approach-control-row" id="rowNorth">
           <div class="appr-info">
-            <h4>North Direction (Heavy Demand)</h4>
+            <h4>North Direction <span id="demandNorth" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
             <span id="txtNorthVehicles">800 vehicles &bull; Queue: 120m</span>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -132,9 +152,9 @@
         </div>
 
         <!-- South Row -->
-        <div class="approach-control-row">
+        <div class="approach-control-row" id="rowSouth">
           <div class="appr-info">
-            <h4>South Direction (Moderate-High)</h4>
+            <h4>South Direction <span id="demandSouth" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
             <span id="txtSouthVehicles">650 vehicles &bull; Queue: 85m</span>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -144,9 +164,9 @@
         </div>
 
         <!-- East Row -->
-        <div class="approach-control-row">
+        <div class="approach-control-row" id="rowEast">
           <div class="appr-info">
-            <h4>East Direction (Low-Moderate)</h4>
+            <h4>East Direction <span id="demandEast" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
             <span id="txtEastVehicles">200 vehicles &bull; Queue: 30m</span>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -156,9 +176,9 @@
         </div>
 
         <!-- West Row -->
-        <div class="approach-control-row">
+        <div class="approach-control-row" id="rowWest">
           <div class="appr-info">
-            <h4>West Direction (Low Demand)</h4>
+            <h4>West Direction <span id="demandWest" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
             <span id="txtWestVehicles">150 vehicles &bull; Queue: 20m</span>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -184,33 +204,39 @@
         </div>
       </div>
 
+      </div>
+      <!-- end .signal-view-grid -->
+
     </div>
+    <!-- end #signalView -->
 
-    <!-- ===== SECTION 2: INCIDENT VERIFICATION QUEUE ===== -->
-    <div style="margin-top: 36px;" id="incidents-queue">
-      <div class="admin-card">
-        <h3>
-          <span><i class="fa-solid fa-list-check" style="color: var(--purple);"></i> Incident Verification & Dispatch Queue</span>
-          <span style="font-size: 13px; color: #6B7280; font-weight: normal;">Live Citizen Submissions</span>
-        </h3>
+    <!-- ===== INCIDENT VERIFICATION VIEW ===== -->
+    <div id="incidentView" style="display:none;">
+      <div id="incidents-queue">
+        <div class="admin-card">
+          <h3>
+            <span><i class="fa-solid fa-list-check" style="color: var(--purple);"></i> Incident Verification & Dispatch Queue</span>
+            <span style="font-size: 13px; color: #6B7280; font-weight: normal;">Live Citizen Submissions</span>
+          </h3>
 
-        <div style="overflow-x: auto;">
-          <table class="algo-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Type</th>
-                <th>Location</th>
-                <th>Severity</th>
-                <th>Reported At</th>
-                <th>Current Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="tmIncidentTableBody">
-              <!-- Injected dynamically -->
-            </tbody>
-          </table>
+          <div style="overflow-x: auto;">
+            <table class="algo-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Severity</th>
+                  <th>Reported At</th>
+                  <th>Current Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tmIncidentTableBody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -220,11 +246,83 @@
   <script src="data.js"></script>
   <script src="script.js"></script>
   <script>
+    const ALL_DIRECTIONS = ['north', 'south', 'east', 'west'];
+    let currentCycleLength = 110;
+    let currentApproaches = ALL_DIRECTIONS;
+
     document.addEventListener('DOMContentLoaded', () => {
+      switchTmView(window.location.hash === '#incidents-queue' ? 'incidents' : 'signal');
+      populateIntersectionSelect();
       checkEmergencyState();
       renderIncidentQueue();
       recalculateSignalTimings();
     });
+
+    // Smart Signal Control and Incident Verification are two separate
+    // functions — only one shows at a time, matching whichever entry
+    // point (hub card / link) the manager came in through. No in-page
+    // switcher — each link leads straight to just its own feature.
+    function switchTmView(view) {
+      const isSignal = view === 'signal';
+
+      document.getElementById('signalView').style.display = isSignal ? '' : 'none';
+      document.getElementById('incidentView').style.display = isSignal ? 'none' : '';
+
+      document.getElementById('tmPageTitle').textContent = isSignal
+        ? 'Smart Signal Controller'
+        : 'Incident Verification & Dispatch Queue';
+      document.getElementById('tmPageSubtitle').textContent = isSignal
+        ? 'Real-time approach demand balancing and signal timing optimization.'
+        : 'Review citizen incident submissions, verify severity, and track them through to resolution.';
+    }
+
+    // Lets the manager pick which intersection/area they're configuring,
+    // instead of always seeing one hardcoded intersection.
+    function populateIntersectionSelect() {
+      const select = document.getElementById('intersectionSelect');
+      const intersections = window.UrbanFlowData.INTERSECTIONS;
+
+      select.innerHTML = intersections.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+      select.value = intersections[0].id;
+      applyIntersectionPreset(intersections[0]);
+    }
+
+    function handleIntersectionChange() {
+      const select = document.getElementById('intersectionSelect');
+      const intersection = window.UrbanFlowData.INTERSECTIONS.find(i => i.id === select.value);
+      if (!intersection) return;
+
+      applyIntersectionPreset(intersection);
+      recalculateSignalTimings();
+      showToast('Intersection Switched', `Now configuring ${intersection.name}.`);
+    }
+
+    // Not every intersection is a 4-way crossing — this shows/hides each
+    // approach (diagram tag, slider row, signal light) to match whichever
+    // directions actually exist at the selected intersection.
+    function applyIntersectionPreset(intersection) {
+      currentCycleLength = intersection.cycleLength;
+      currentApproaches = intersection.approaches;
+
+      ALL_DIRECTIONS.forEach(dir => {
+        const cap = dir.charAt(0).toUpperCase() + dir.slice(1);
+        const present = currentApproaches.includes(dir);
+
+        document.getElementById(`approachTag${cap}`).style.display = present ? '' : 'none';
+        document.getElementById(`row${cap}`).style.display = present ? '' : 'none';
+        document.getElementById(`light${cap}`).style.visibility = present ? 'visible' : 'hidden';
+
+        if (present) {
+          document.getElementById(`slider${cap}`).value = intersection.vehicles[dir];
+        }
+      });
+
+      document.getElementById('diagIntersectionName').textContent = intersection.name;
+      document.getElementById('diagJunctionType').textContent =
+        currentApproaches.length === 3 ? '3-Way (T-Junction)' : `${currentApproaches.length}-Way`;
+      document.getElementById('diagCycleTime').textContent = intersection.cycleLength;
+      document.getElementById('controlsIntersectionName').textContent = intersection.name;
+    }
 
     function checkEmergencyState() {
       const em = window.UrbanFlowData.getActiveEmergency();
@@ -247,41 +345,47 @@
       showToast('Override Released', 'Intersection restored to dynamic traffic queue mode.');
     }
 
-    // Dynamic signal calculation logic matching PDF Figure 5
+    // Dynamic signal calculation logic matching PDF Figure 5 — only loops
+    // over the approaches that exist at the currently selected intersection
+    // (3 for a T-junction, 4 for a full crossing), so a 3-way cycle isn't
+    // forced to split time across a phantom 4th direction.
     function recalculateSignalTimings() {
-      const n = parseInt(document.getElementById('sliderNorth').value);
-      const s = parseInt(document.getElementById('sliderSouth').value);
-      const e = parseInt(document.getElementById('sliderEast').value);
-      const w = parseInt(document.getElementById('sliderWest').value);
+      const cycle = currentCycleLength;
+      const counts = {};
 
-      document.getElementById('diagNorthCount').textContent = `${n} vehicles`;
-      document.getElementById('diagSouthCount').textContent = `${s} vehicles`;
-      document.getElementById('diagEastCount').textContent = `${e} vehicles`;
-      document.getElementById('diagWestCount').textContent = `${w} vehicles`;
+      currentApproaches.forEach(dir => {
+        const cap = dir.charAt(0).toUpperCase() + dir.slice(1);
+        counts[dir] = parseInt(document.getElementById(`slider${cap}`).value);
+      });
 
-      document.getElementById('txtNorthVehicles').textContent = `${n} vehicles • Queue: ${Math.round(n * 0.15)}m`;
-      document.getElementById('txtSouthVehicles').textContent = `${s} vehicles • Queue: ${Math.round(s * 0.13)}m`;
-      document.getElementById('txtEastVehicles').textContent = `${e} vehicles • Queue: ${Math.round(e * 0.15)}m`;
-      document.getElementById('txtWestVehicles').textContent = `${w} vehicles • Queue: ${Math.round(w * 0.13)}m`;
+      const total = Object.values(counts).reduce((sum, v) => sum + v, 0);
+      const avgShare = 1 / currentApproaches.length;
+      const minGreen = currentApproaches.length === 3 ? 12 : 10;
 
-      const total = n + s + e + w;
-      const cycle = 110; // total cycle in seconds
+      currentApproaches.forEach(dir => {
+        const cap = dir.charAt(0).toUpperCase() + dir.slice(1);
+        const count = counts[dir];
+        const share = count / total;
+        const green = Math.max(minGreen, Math.round(share * cycle));
+        const isHeavier = share >= avgShare;
 
-      // Calculate proportional green allocations
-      const nGreen = Math.max(15, Math.round((n / total) * cycle));
-      const sGreen = Math.max(15, Math.round((s / total) * cycle));
-      const eGreen = Math.max(10, Math.round((e / total) * cycle));
-      const wGreen = Math.max(10, Math.round((w / total) * cycle));
+        let demand = 'Low Demand';
+        if (share >= 0.35) demand = 'Heavy Demand';
+        else if (share >= 0.22) demand = 'Moderate-High';
+        else if (share >= 0.12) demand = 'Low-Moderate';
 
-      document.getElementById('diagNorthGreen').textContent = `Green: ${nGreen}s`;
-      document.getElementById('diagSouthGreen').textContent = `Green: ${sGreen}s`;
-      document.getElementById('diagEastGreen').textContent = `Green: ${eGreen}s`;
-      document.getElementById('diagWestGreen').textContent = `Green: ${wGreen}s`;
+        document.getElementById(`demand${cap}`).textContent = `(${demand})`;
+        document.getElementById(`diag${cap}Count`).textContent = `${count} vehicles`;
+        document.getElementById(`txt${cap}Vehicles`).textContent = `${count} vehicles • Queue: ${Math.round(count * 0.14)}m`;
 
-      document.getElementById('badgeNorthGreen').textContent = `${nGreen}s Green`;
-      document.getElementById('badgeSouthGreen').textContent = `${sGreen}s Green`;
-      document.getElementById('badgeEastGreen').textContent = `${eGreen}s Green`;
-      document.getElementById('badgeWestGreen').textContent = `${wGreen}s Green`;
+        const diagGreenEl = document.getElementById(`diag${cap}Green`);
+        diagGreenEl.textContent = `Green: ${green}s`;
+        diagGreenEl.style.color = isHeavier ? '' : '#EF4444';
+
+        const badgeEl = document.getElementById(`badge${cap}Green`);
+        badgeEl.textContent = `${green}s Green`;
+        badgeEl.className = 'appr-badge ' + (isHeavier ? 'green' : 'red');
+      });
     }
 
     function forcePhase(phase) {
@@ -324,10 +428,13 @@
           <td>${escapeHtml(inc.road)}</td>
           <td><span class="severity-pill ${sevClass}">${inc.severity}</span></td>
           <td>${inc.reportedAt}</td>
-          <td><strong style="color:${inc.status === 'Verified' ? '#059669' : '#D97706'}">${inc.status}</strong></td>
+          <td><strong style="color:${getIncidentStatusColor(inc.status)}">${inc.status}</strong></td>
           <td>
             <button class="chip" onclick="verifyInc('${inc.id}')" style="background:#ECFDF5; color:#065F46; border:none; margin-right:4px;">
               Verify
+            </button>
+            <button class="chip" onclick="markInProgress('${inc.id}')" style="background:#FEF3C7; color:#92400E; border:none; margin-right:4px;">
+              In Progress
             </button>
             <button class="chip" onclick="resolveInc('${inc.id}')" style="background:#F3F4F6; color:#374151; border:none;">
               Resolve
@@ -338,10 +445,25 @@
       });
     }
 
+    function getIncidentStatusColor(status) {
+      switch (status) {
+        case 'Verified': return '#059669';
+        case 'In Progress': return '#2563EB';
+        case 'Resolved': return '#6B7280';
+        default: return '#D97706'; // Reported
+      }
+    }
+
     function verifyInc(id) {
       window.UrbanFlowData.updateIncidentStatus(id, 'Verified');
       renderIncidentQueue();
       showToast('Incident Verified', `${id} has been verified and broadcast to navigation algorithms.`);
+    }
+
+    function markInProgress(id) {
+      window.UrbanFlowData.updateIncidentStatus(id, 'In Progress');
+      renderIncidentQueue();
+      showToast('Incident In Progress', `${id} marked as in progress — a response crew is being coordinated.`);
     }
 
     function resolveInc(id) {

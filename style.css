@@ -27,6 +27,81 @@
   --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
+/* ===== FOOTER CONTACT BAR ===== */
+.footer-bar {
+  width: 100%;
+  margin-top: 60px;
+  padding: 20px 40px;
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 50%, #0EA5E9 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-bar .contact-icons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: #fff;
+  font-size: 15px;
+}
+
+.footer-bar .contact-label {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.footer-bar .contact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-weight: 500;
+}
+
+.footer-bar .contact-item:hover {
+  color: #E0F2FE;
+}
+
+.footer-bar .contact-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.footer-bar .icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.footer-bar .icon-circle svg {
+  width: 17px;
+  height: 17px;
+  fill: #fff;
+}
+
+@media (max-width: 640px) {
+  .footer-bar {
+    padding: 18px 20px;
+  }
+
+  .footer-bar .contact-divider {
+    display: none;
+  }
+}
+
 /* Reset & Global */
 * {
   margin: 0;
@@ -908,6 +983,7 @@ input, select, textarea {
   border-radius: var(--radius-full);
   font-size: 13px;
   font-weight: 500;
+  color: #fff;
 }
 
 .user-badge .avatar-circle {
@@ -934,6 +1010,78 @@ input, select, textarea {
 }
 
 .logout-btn:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* Clicking the username reveals current mode + logout, like a normal site's account menu */
+.user-menu-wrap {
+  position: relative;
+}
+
+.user-badge.user-menu-trigger:hover {
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+.user-menu-caret {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+}
+
+.user-menu-wrap.open .user-menu-caret {
+  transform: rotate(180deg);
+}
+
+.user-menu-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 210px;
+  background: #1A1B2D;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  z-index: 100;
+}
+
+.user-menu-wrap.open .user-menu-dropdown {
+  display: block;
+}
+
+.user-menu-mode {
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #C4B5FD;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.user-menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 4px 0;
+}
+
+.user-menu-logout {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: transparent;
+  color: #FCA5A5;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  text-align: left;
+}
+
+.user-menu-logout:hover {
   background: var(--danger);
   color: #fff;
 }
@@ -1560,6 +1708,7 @@ input, select, textarea {
 .route-grid {
   display: grid;
   grid-template-columns: 460px 1fr;
+  align-items: start;
   gap: 24px;
 }
 
@@ -1648,87 +1797,7 @@ input, select, textarea {
 .traffic-dot.heavy { background: #EF4444; }
 .traffic-dot.low { background: #10B981; }
 
-.route-summary-box {
-  background: #141524;
-  border-radius: var(--radius-md);
-  padding: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.route-summary-box h4 {
-  font-size: 16px;
-  font-weight: 700;
-  margin-bottom: 16px;
-  color: #fff;
-}
-
-.waypoint-list {
-  list-style: none;
-  position: relative;
-  padding-left: 20px;
-  margin-bottom: 24px;
-}
-
-.waypoint-list::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  left: 6px;
-  width: 2px;
-  background: #33354A;
-}
-
-.waypoint-item {
-  position: relative;
-  padding-bottom: 16px;
-  font-size: 14px;
-  color: #E2E8F0;
-}
-
-.waypoint-item:last-child {
-  padding-bottom: 0;
-}
-
-.waypoint-item::before {
-  content: '';
-  position: absolute;
-  left: -20px;
-  top: 4px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #141524;
-  border: 3px solid #8B5CF6;
-}
-
-.waypoint-item.dest::before {
-  border-color: var(--danger);
-  background: var(--danger);
-}
-
-.btn-start-nav {
-  width: 100%;
-  padding: 14px;
-  border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-  color: #fff;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.btn-start-nav:hover {
-  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.55);
-  transform: translateY(-2px);
-}
-
-/* Algorithm Comparison Table */
+/* Algorithm Comparison Table (still used standalone on admin.html / traffic-manager.html) */
 .algo-card {
   margin-top: 24px;
   background: #141524;

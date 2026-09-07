@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Emergency Priority Dispatch | Urban Flow</title>
+  <title>Request Emergency Vehicle | Urban Flow</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,7 +16,7 @@
     <a href="hub.html" class="nav-logo-link">
       <span>🚦</span> UrbanFlow
     </a>
-    <span class="nav-pill-role" style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5);">
+    <span class="nav-pill-role" id="navRoleBadge" style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5);">
       Emergency Response Priority
     </span>
 
@@ -26,13 +26,20 @@
       <a href="hub.html" class="nav-btn-icon">
         <i class="fa-solid fa-grid-2"></i> Feature Hub
       </a>
-      <div class="user-badge">
-        <div class="avatar-circle" id="navUserAvatar">U</div>
-        <span id="navUserName">User</span>
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar">U</div>
+          <span id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Commuter Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
       </div>
-      <button class="logout-btn" onclick="UrbanFlowData.logout()">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
     </div>
   </nav>
 
@@ -43,10 +50,10 @@
     <div class="emergency-header">
       <div>
         <h1 style="font-size: 26px; font-weight: 700; color: #111827;">
-          <i class="fa-solid fa-truck-medical" style="color: #EF4444;"></i> Call & Dispatch Emergency Vehicle
+          <i class="fa-solid fa-truck-medical" style="color: #EF4444;"></i> <span id="emHeaderTitle">Request Emergency Vehicle</span>
         </h1>
-        <p style="color: #6B7280; font-size: 14px;">
-          Activating an emergency vehicle establishes a prioritized green-wave corridor, preempting regular traffic light cycles.
+        <p style="color: #6B7280; font-size: 14px;" id="emHeaderSubtitle">
+          Requesting an emergency vehicle alerts the nearest response unit and opens a green-wave corridor so it reaches you faster.
         </p>
       </div>
       <span class="siren-badge" id="sirenBadge" style="display: none;">
@@ -68,28 +75,50 @@
     <!-- Emergency Controls & Map Grid -->
     <div class="journey-grid">
       
-      <!-- Left: Vehicle Selection & Dispatch Form -->
+      <!-- Left: Citizen Request Form OR Dispatcher Queue (toggled by role in JS) -->
       <div class="emergency-card">
-        <h3>1. Select Emergency Vehicle Type</h3>
-        
-        <div class="vehicle-selector">
-          <div class="veh-card selected" id="vehAmbulance" onclick="selectEmergencyVeh('ambulance')">
-            <div class="veh-icon">🚑</div>
-            <h4>Ambulance</h4>
-            <p>Code 1 Medical Priority</p>
+
+        <!-- CITIZEN VIEW: submit a request for a vehicle to come to them -->
+        <div id="citizenRequestForm">
+          <h3>1. Select Emergency Vehicle Type</h3>
+
+          <div class="vehicle-selector">
+            <div class="veh-card selected" id="vehAmbulance" onclick="selectEmergencyVeh('ambulance')">
+              <div class="veh-icon">🚑</div>
+              <h4>Ambulance</h4>
+              <p>Code 1 Medical Priority</p>
+            </div>
+
+            <div class="veh-card" id="vehFire" onclick="selectEmergencyVeh('fire')">
+              <div class="veh-icon">🚒</div>
+              <h4>Fire Truck</h4>
+              <p>Fire Rescue Dispatch</p>
+            </div>
+
+            <div class="veh-card" id="vehPolice" onclick="selectEmergencyVeh('police')">
+              <div class="veh-icon">🚓</div>
+              <h4>Police Cruiser</h4>
+              <p>High Priority Interceptor</p>
+            </div>
           </div>
 
-          <div class="veh-card" id="vehFire" onclick="selectEmergencyVeh('fire')">
-            <div class="veh-icon">🚒</div>
-            <h4>Fire Truck</h4>
-            <p>Fire Rescue Dispatch</p>
+          <h3>2. Your Location & Pickup Details</h3>
+
+          <div class="input-group">
+            <label><i class="fa-solid fa-hospital" style="color: #EF4444;"></i> Nearest Emergency Station (Auto-Assigned)</label>
+            <input type="text" id="emOrigin" value="Rajindra Hospital, Patiala" readonly style="background:#E5E7EB;">
           </div>
 
-          <div class="veh-card" id="vehPolice" onclick="selectEmergencyVeh('police')">
-            <div class="veh-icon">🚓</div>
-            <h4>Police Cruiser</h4>
-            <p>High Priority Interceptor</p>
+          <div class="input-group">
+            <label><i class="fa-solid fa-triangle-exclamation" style="color: #F59E0B;"></i> Your Location / Incident Site</label>
+            <input type="text" id="emDestination" value="Phase 7 Industrial Area, Patiala" placeholder="Enter your current location">
           </div>
+
+          <button type="button" class="btn-find-route" id="btnRequestVehicle" onclick="submitEmergencyRequest()" style="margin-top: 16px; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
+            <i class="fa-solid fa-truck-medical"></i> REQUEST EMERGENCY VEHICLE
+          </button>
+
+          <div id="citizenRequestStatus" style="display:none; margin-top: 16px; padding: 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;"></div>
         </div>
 
         <h3>2. Emergency Corridor Path</h3>
@@ -107,6 +136,12 @@
         <button type="button" class="btn-find-route" id="btnDispatchEmergency" onclick="dispatchEmergencyVehicle()" style="margin-top: 16px; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
           <i class="fa-solid fa-bullhorn"></i> DISPATCH & ACTIVATE GREEN WAVE
         </button>
+
+        <!-- DISPATCHER VIEW: work through incoming citizen requests -->
+        <div id="dispatcherQueuePanel" style="display:none;">
+          <h3>Incoming Emergency Requests</h3>
+          <div id="requestQueueList"></div>
+        </div>
 
         <div style="margin-top: 24px; padding: 16px; background: #FEF2F2; border-radius: var(--radius-sm); border: 1px solid #FECACA; font-size: 13px; color: #991B1B;">
           <strong><i class="fa-solid fa-shield-halved"></i> Preemption Protocol:</strong><br>
@@ -140,6 +175,10 @@
     let emVehicleMarker = null;
     let emInterval = null;
     let selectedVehType = 'ambulance';
+    let isDispatcherRole = false;
+    let citizenRequestId = null;
+    let citizenPollInterval = null;
+    let queueRefreshInterval = null;
 
     let emOriginMarker = null;
     let emDestMarker = null;
@@ -148,8 +187,30 @@
     let emPath = [];
 
     document.addEventListener('DOMContentLoaded', () => {
+<<<<<<< HEAD
       const bases = window.UrbanFlowData.getEmergencyBaseOptions();
       const sites = window.UrbanFlowData.getEmergencySiteOptions();
+=======
+      // A citizen/commuter requests a vehicle to come to them; a traffic
+      // manager/admin works the incoming request queue instead of typing
+      // source/destination themselves.
+      const user = window.UrbanFlowData.getCurrentUser();
+      isDispatcherRole = !!(user && (user.role === 'traffic_manager' || user.role === 'admin'));
+
+      if (isDispatcherRole) {
+        document.getElementById('navRoleBadge').textContent = 'Emergency Dispatch Control';
+        document.getElementById('emHeaderTitle').textContent = 'Dispatch Emergency Vehicle';
+        document.getElementById('emHeaderSubtitle').textContent = 'Review incoming citizen requests below and dispatch the nearest unit — this opens a green-wave corridor along its route.';
+        document.getElementById('citizenRequestForm').style.display = 'none';
+        document.getElementById('dispatcherQueuePanel').style.display = 'block';
+
+        renderRequestQueue();
+        queueRefreshInterval = setInterval(renderRequestQueue, 3000);
+      }
+
+      // Initialize map at Rajindra Hospital
+      emMap = createLeafletMap('emergencyMap', 30.3340, 76.3820, 14);
+>>>>>>> 882a889 (Updated smart traffic system frontend)
 
       // Match the pre-filled input values against the known base / site lists
       emOriginPoint = findPoint(bases, document.getElementById('emOrigin').value) || bases[0];
@@ -266,7 +327,101 @@
       document.getElementById('vehPolice').classList.toggle('selected', type === 'police');
     }
 
-    function dispatchEmergencyVehicle() {
+    // ===== CITIZEN: send a request, then wait for a dispatcher to act on it =====
+    function submitEmergencyRequest() {
+      const location = document.getElementById('emDestination').value.trim();
+      if (!location) {
+        alert('Please enter your current location.');
+        return;
+      }
+
+      const req = window.UrbanFlowData.addEmergencyRequest({
+        vehicleType: selectedVehType,
+        location: location,
+        origin: document.getElementById('emOrigin').value
+      });
+      citizenRequestId = req.id;
+
+      const statusBox = document.getElementById('citizenRequestStatus');
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(245, 158, 11, 0.12)';
+      statusBox.style.border = '1px solid #F59E0B';
+      statusBox.style.color = '#92400E';
+      statusBox.innerHTML = '<i class="fa-solid fa-clock"></i> Request sent — waiting for the nearest unit to dispatch...';
+
+      const btn = document.getElementById('btnRequestVehicle');
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
+
+      showToast('Request Sent!', 'Your emergency request has been sent to the dispatch team.');
+
+      if (citizenPollInterval) clearInterval(citizenPollInterval);
+      citizenPollInterval = setInterval(checkCitizenRequestStatus, 3000);
+    }
+
+    function checkCitizenRequestStatus() {
+      if (!citizenRequestId) return;
+      const list = window.UrbanFlowData.getEmergencyRequests();
+      const req = list.find(r => r.id === citizenRequestId);
+      if (req && req.status === 'dispatched') {
+        clearInterval(citizenPollInterval);
+
+        const statusBox = document.getElementById('citizenRequestStatus');
+        statusBox.style.background = 'rgba(16, 185, 129, 0.12)';
+        statusBox.style.border = '1px solid #10B981';
+        statusBox.style.color = '#065F46';
+        statusBox.innerHTML = '<i class="fa-solid fa-truck-medical"></i> Unit dispatched! Your emergency vehicle is en route.';
+
+        showToast('Emergency Unit Dispatched!', 'A unit is on its way to your location.', 5000);
+        activateGreenWave(req.vehicleType, req.location);
+      }
+    }
+
+    // ===== DISPATCHER: work through the incoming request queue =====
+    function renderRequestQueue() {
+      const list = window.UrbanFlowData.getEmergencyRequests().filter(r => r.status === 'pending');
+      const container = document.getElementById('requestQueueList');
+
+      if (list.length === 0) {
+        container.innerHTML = '<p style="color:#6B7280; font-size: 13px; padding: 12px 0;">No active emergency requests. Standby.</p>';
+        return;
+      }
+
+      container.innerHTML = list.map(req => {
+        const emoji = req.vehicleType === 'fire' ? '🚒' : req.vehicleType === 'police' ? '🚓' : '🚑';
+        const label = req.vehicleType.charAt(0).toUpperCase() + req.vehicleType.slice(1);
+        return `
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px; border:1px solid #FECACA; border-radius:var(--radius-sm); margin-bottom:10px; background:#FEF2F2;">
+            <div>
+              <div style="font-weight:700; color:#111827; font-size:14px;">${emoji} ${label} Request</div>
+              <div style="font-size:12px; color:#6B7280; margin-top:4px;"><i class="fa-solid fa-location-dot"></i> ${req.location}</div>
+              <div style="font-size:11px; color:#9CA3AF; margin-top:2px;">Requested at ${req.requestedAt}</div>
+            </div>
+            <button onclick="dispatchQueuedRequest('${req.id}')" style="background:#DC2626; color:#fff; border:none; padding:10px 16px; border-radius:var(--radius-full); font-weight:700; font-size:12px; cursor:pointer; white-space:nowrap;">
+              <i class="fa-solid fa-bullhorn"></i> DISPATCH
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function dispatchQueuedRequest(id) {
+      const list = window.UrbanFlowData.getEmergencyRequests();
+      const req = list.find(r => r.id === id);
+      if (!req) return;
+
+      window.UrbanFlowData.updateEmergencyRequestStatus(id, 'dispatched');
+      document.getElementById('emMapTitle').textContent = `Emergency Corridor Overview • Rajindra Hospital → ${req.location}`;
+
+      activateGreenWave(req.vehicleType, req.location);
+      renderRequestQueue();
+
+      showToast('Vehicle Dispatched!', `Unit dispatched toward ${req.location}.`, 5000);
+    }
+
+    // ===== Shared: green-wave activation + map animation =====
+    function activateGreenWave(vehType, destinationLabel) {
       const banner = document.getElementById('greenWaveBanner');
       const badge = document.getElementById('sirenBadge');
       const statusText = document.getElementById('emStatusText');
@@ -275,13 +430,15 @@
       badge.style.display = 'inline-block';
       statusText.innerHTML = '<span style="color:#EF4444; font-weight:700;">● GREEN WAVE ACTIVE</span>';
 
-      showToast('Emergency Unit Dispatched!', 'Traffic signals along the corridor have been overridden to GREEN.', 5000);
-
       // Save active emergency in shared store so Traffic Manager & Admin dashboards reflect it!
       window.UrbanFlowData.setEmergency({
-        vehicle: selectedVehType,
+        vehicle: vehType,
         dispatchedAt: new Date().toLocaleTimeString(),
+<<<<<<< HEAD
         route: `${emOriginPoint.label} -> ${emDestPoint.label}`,
+=======
+        route: `Rajindra Hospital -> Phase 7 Chowk -> ${destinationLabel || 'Destination'}`,
+>>>>>>> 882a889 (Updated smart traffic system frontend)
         preemptedIntersections: ['Phase 7 Chowk', 'Bypass South']
       });
 
@@ -304,8 +461,8 @@
 
       // Animate emergency vehicle marker
       let emoji = '🚑';
-      if (selectedVehType === 'fire') emoji = '🚒';
-      if (selectedVehType === 'police') emoji = '🚓';
+      if (vehType === 'fire') emoji = '🚒';
+      if (vehType === 'police') emoji = '🚓';
 
       if (emVehicleMarker) emMap.removeLayer(emVehicleMarker);
       if (emInterval) clearInterval(emInterval);
@@ -321,6 +478,14 @@
           clearInterval(emInterval);
           statusText.textContent = 'Vehicle Arrived on Scene';
           showToast('Arrived on Scene', 'Emergency unit reached destination. Corridor returned to standard cycle.');
+
+          // Let the citizen submit a fresh request once this one has concluded
+          const btn = document.getElementById('btnRequestVehicle');
+          if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '';
+            btn.style.cursor = '';
+          }
           return;
         }
         emVehicleMarker.setLatLng(emPath[step]);

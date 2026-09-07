@@ -33,9 +33,6 @@
   <!-- ===== HERO SECTION ===== -->
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-badge">
-        <i class="fa-solid fa-satellite-dish"></i> Intelligent Traffic Operating System
-      </div>
       <h1 class="hero-title">Urban Flow</h1>
       <p class="hero-tagline">Smarter roads. Smoother cities.</p>
       
@@ -135,157 +132,26 @@
 
     <!-- ===== FOOTER BAR ===== -->
     <footer class="footer-bar">
-      <div class="footer-left">
-        <span>Urban Flow System &bull; TIET Patiala SE Project Group 12</span>
-      </div>
       <div class="contact-icons">
-        <span>Contact Us:</span>
-        <span class="icon-circle">
-          <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.7 5.1 6.5 6.5l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.5 21 3 13.5 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1.1L6.6 10.8z"/></svg>
-        </span>
-        <strong>+91 99999 99999</strong>
-        <span class="icon-circle">
-          <svg viewBox="0 0 24 24"><path d="M2 5h20v14H2V5zm2 2v.01L12 13l8-5.99V7l-8 5-8-5zm0 2.24V17h16V9.24l-8 5-8-5z"/></svg>
-        </span>
-        <span>support@urbanflow.io</span>
+        <span class="contact-label">Contact Us</span>
+        <a class="contact-item" href="tel:987654321">
+          <span class="icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M6.6 10.8c1.4 2.8 3.7 5.1 6.5 6.5l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.5 21 3 13.5 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1.1L6.6 10.8z"/></svg>
+          </span>
+          <span>987654321</span>
+        </a>
+        <span class="contact-divider"></span>
+        <a class="contact-item" href="mailto:urbanflow@1234">
+          <span class="icon-circle">
+            <svg viewBox="0 0 24 24"><path d="M2 5h20v14H2V5zm2 2v.01L12 13l8-5.99V7l-8 5-8-5zm0 2.24V17h16V9.24l-8 5-8-5z"/></svg>
+          </span>
+          <span>urbanflow@1234</span>
+        </a>
       </div>
     </footer>
   </section>
 
-  <!-- ===== INTERACTIVE FEATURE INSPECTION MODAL ===== -->
-  <div class="feature-modal-backdrop" id="featureModalBackdrop" onclick="handleBackdropClick(event)">
-    <div class="feature-modal" id="featureModalBox">
-      <div class="modal-header">
-        <div class="modal-header-left">
-          <div class="modal-icon" id="mIcon">🚦</div>
-          <div class="modal-title-wrap">
-            <h3 id="mTitle">Feature Details</h3>
-            <span id="mCategory">Urban Flow Intelligence</span>
-          </div>
-        </div>
-        <button class="modal-close" onclick="closeFeatureModal()">&times;</button>
-      </div>
-
-      <div class="modal-body">
-        <p class="modal-description" id="mDesc">
-          Detailed explanation of how this feature functions.
-        </p>
-
-        <div class="modal-stats-box" id="mStats">
-          <div>
-            <div class="m-stat-val" id="mStat1Val">99.4%</div>
-            <div class="m-stat-lbl" id="mStat1Lbl">Sensor Uptime</div>
-          </div>
-          <div>
-            <div class="m-stat-val" id="mStat2Val">&lt; 1 sec</div>
-            <div class="m-stat-lbl" id="mStat2Lbl">Data Latency</div>
-          </div>
-          <div>
-            <div class="m-stat-val" id="mStat3Val">142 Roads</div>
-            <div class="m-stat-lbl" id="mStat3Lbl">Monitored</div>
-          </div>
-        </div>
-
-        <div style="background:#0F101C; border-radius:var(--radius-sm); padding:16px; border:1px solid rgba(255,255,255,0.06); font-size:13px; color:#9CA3AF;">
-          <strong style="color:#C4B5FD;"><i class="fa-solid fa-microchip"></i> Underlying Technology:</strong>
-          <p id="mTech" style="margin-top:6px; color:#D1D5DB;">
-            Dijkstra, A* Search Algorithm, OpenStreetMap GIS vectors, and Node.js REST orchestrator.
-          </p>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeFeatureModal()" style="padding:10px 22px; font-size:13px;">
-          Close
-        </button>
-        <a href="login.html" class="btn-primary" style="padding:10px 24px; font-size:13px;">
-          Try in Dashboard <i class="fa-solid fa-arrow-right"></i>
-        </a>
-      </div>
-    </div>
-  </div>
-
   <script src="data.js"></script>
   <script src="script.js"></script>
-  <script>
-    // Feature detailed definitions
-    const FEATURE_DATA = {
-      'traffic': {
-        icon: '🚦',
-        title: 'Real-Time Traffic Monitoring',
-        category: 'Sensory Telemetry',
-        desc: 'Captures live vehicular density, intersection queue lengths, and speed profiles across arterial corridors. The system updates traffic condition vectors every 3 seconds to ensure both commuters and automated control units possess live awareness of city bottlenecks.',
-        stat1Val: '142', stat1Lbl: 'Monitored Roads',
-        stat2Val: '< 2 sec', stat2Lbl: 'Telemetry Latency',
-        stat3Val: '99.8%', stat3Lbl: 'Network Availability',
-        tech: 'IoT Roadway Sensors, Computer Vision Vehicle Counters, OpenStreetMap Vector Overlays, WebSockets.'
-      },
-      'prediction': {
-        icon: '🧠',
-        title: 'AI Traffic Congestion Prediction',
-        category: 'Machine Learning Engine',
-        desc: 'Trained on historical traffic logs, day-of-week demand curves, seasonal trends, and incident histories. The regression and gradient-boosted trees predict near-future congestion up to 60 minutes in advance, allowing preventative signal reallocation before gridlocks form.',
-        stat1Val: '87.4%', stat1Lbl: 'Prediction Accuracy',
-        stat2Val: '60 min', stat2Lbl: 'Forecast Horizon',
-        stat3Val: '4 Tiers', stat3Lbl: 'Low / Med / High / Severe',
-        tech: 'Supervised Random Forest, XGBoost Regression, Time-series feature generation, Python Scikit-learn.'
-      },
-      'routing': {
-        icon: '📍',
-        title: 'Dijkstra & A* Route Optimization',
-        category: 'Graph Algorithm Core',
-        desc: 'Instead of purely measuring physical mileage, our routing engine assigns dynamic cost weights to road segments based on live delays, roadwork obstructions, and toll configurations. It returns multiple alternatives (Fastest, Shortest, Avoid Tolls) with real-time ETA comparisons.',
-        stat1Val: '3 Options', stat1Lbl: 'Fastest / Shortest / Toll-Free',
-        stat2Val: '28%', stat2Lbl: 'Travel Time Saved',
-        stat3Val: '0.04s', stat3Lbl: 'Route Compute Speed',
-        tech: 'Traffic-Weighted Dijkstra, A* Heuristic Search, Dynamic Edge Re-weighting, Leaflet Geospatial Geometry.'
-      },
-      'emergency': {
-        icon: '🚑',
-        title: 'Emergency Green-Wave Priority',
-        category: 'Life Safety Dispatch',
-        desc: 'Provides automated preemption corridors for ambulances, fire engines, and police. When an active emergency vehicle is registered, intersections along its computed travel trajectory automatically extend green phase durations and hold cross-traffic on red until the unit clears the junction.',
-        stat1Val: '< 30 sec', stat1Lbl: 'Signal Preemption',
-        stat2Val: '42%', stat2Lbl: 'Faster Emergency Transit',
-        stat3Val: '100%', stat3Lbl: 'Fail-Safe Safety Override',
-        tech: 'Corridor Signal Preemption, GPS Transponder Tracking, Autonomous Green Wave Waves, Multi-tier RBAC Override.'
-      }
-    };
-
-    function openFeatureModal(key) {
-      const data = FEATURE_DATA[key];
-      if (!data) return;
-
-      document.getElementById('mIcon').textContent = data.icon;
-      document.getElementById('mTitle').textContent = data.title;
-      document.getElementById('mCategory').textContent = data.category;
-      document.getElementById('mDesc').textContent = data.desc;
-
-      document.getElementById('mStat1Val').textContent = data.stat1Val;
-      document.getElementById('mStat1Lbl').textContent = data.stat1Lbl;
-      document.getElementById('mStat2Val').textContent = data.stat2Val;
-      document.getElementById('mStat2Lbl').textContent = data.stat2Lbl;
-      document.getElementById('mStat3Val').textContent = data.stat3Val;
-      document.getElementById('mStat3Lbl').textContent = data.stat3Lbl;
-
-      document.getElementById('mTech').textContent = data.tech;
-
-      document.getElementById('featureModalBackdrop').classList.add('active');
-    }
-
-    function closeFeatureModal() {
-      document.getElementById('featureModalBackdrop').classList.remove('active');
-    }
-
-    function handleBackdropClick(e) {
-      if (e.target.id === 'featureModalBackdrop') {
-        closeFeatureModal();
-      }
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeFeatureModal();
-    });
-  </script>
 </body>
 </html>

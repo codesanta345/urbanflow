@@ -27,13 +27,20 @@
       <a href="hub.html" class="nav-btn-icon">
         <i class="fa-solid fa-grid-2"></i> Feature Hub
       </a>
-      <div class="user-badge">
-        <div class="avatar-circle" id="navUserAvatar">U</div>
-        <span id="navUserName">User</span>
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar">U</div>
+          <span id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Commuter Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
       </div>
-      <button class="logout-btn" onclick="UrbanFlowData.logout()">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
     </div>
   </nav>
 
@@ -73,7 +80,7 @@
           </div>
           <div class="route-traffic-status">
             <span class="traffic-dot moderate"></span>
-            <span>Moderate Traffic &bull; via Phase 7 Chowk & Bypass</span>
+            <span id="statusA">Moderate Traffic</span>
           </div>
         </div>
 
@@ -86,7 +93,7 @@
           </div>
           <div class="route-traffic-status">
             <span class="traffic-dot heavy"></span>
-            <span>Heavy Traffic &bull; via City Market (Delay +5m)</span>
+            <span id="statusB">Heavy Traffic</span>
           </div>
         </div>
 
@@ -99,70 +106,8 @@
           </div>
           <div class="route-traffic-status">
             <span class="traffic-dot low"></span>
-            <span>Low Traffic &bull; via Outer Link (Toll Free)</span>
+            <span id="statusC">Low Traffic</span>
           </div>
-        </div>
-
-        <!-- Route Details & Turn-by-Turn Waypoints (PDF Figure 2 Screen 3) -->
-        <div class="route-summary-box">
-          <h4 id="routeSummaryTitle">Route Details &bull; 16 min (7.2 km)</h4>
-
-          <ul class="waypoint-list" id="waypointList">
-            <li class="waypoint-item">Thapar University Main Gate</li>
-            <li class="waypoint-item">Phase 7 Chowk (Signal Priority)</li>
-            <li class="waypoint-item">Bypass Road Exit 2</li>
-            <li class="waypoint-item dest">Patiala Bus Stand Arrival</li>
-          </ul>
-
-          <button class="btn-start-nav" id="btnStartNav" onclick="startNavigationSimulation()">
-            <i class="fa-solid fa-diamond-turn-right"></i> START NAVIGATION
-          </button>
-          
-          <div id="navStatusBanner" style="display: none; margin-top: 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; color: #34D399; padding: 12px; border-radius: var(--radius-sm); font-size: 13px; text-align: center; font-weight: 600;">
-            <i class="fa-solid fa-location-crosshairs"></i> Turn-by-turn guidance active. Next turn in 400m onto Phase 7 Chowk.
-          </div>
-        </div>
-
-        <!-- Dijkstra / A* Comparison Table (PDF Figure 6) -->
-        <div class="algo-card">
-          <h4><i class="fa-solid fa-diagram-project" style="color: var(--purple-vibrant);"></i> Algorithm Cost Matrix (Dijkstra / A*)</h4>
-          <table class="algo-table">
-            <thead>
-              <tr>
-                <th>Route</th>
-                <th>Distance</th>
-                <th>Est. Time</th>
-                <th>Traffic</th>
-                <th>Total Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="highlight">
-                <td>A &rarr; B &rarr; D &rarr; F</td>
-                <td>7.2 km</td>
-                <td>16 min</td>
-                <td>Moderate</td>
-                <td><strong>16 min &#9733;</strong></td>
-              </tr>
-              <tr>
-                <td>A &rarr; C &rarr; D &rarr; F</td>
-                <td>6.4 km</td>
-                <td>21 min</td>
-                <td>Heavy</td>
-                <td>21 min</td>
-              </tr>
-              <tr>
-                <td>A &rarr; C &rarr; E &rarr; F</td>
-                <td>9.1 km</td>
-                <td>24 min</td>
-                <td>Low</td>
-                <td>24 min</td>
-              </tr>
-            </tbody>
-          </table>
-          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
-            &#10003; <strong>Recommended Route:</strong> A &rarr; B &rarr; D &rarr; F utilizes traffic density weighting to minimize delay.
-          </p>
         </div>
 
       </div>
@@ -191,17 +136,85 @@
     let routeMap = null;
     let activePolyline = null;
     let alternativePolylines = [];
-    let carMarker = null;
-    let animationInterval = null;
-    let currentKey = 'fastest';
+    let ROUTES = null; // computed fresh per query — see buildDynamicRoutes()
 
-    document.addEventListener('DOMContentLoaded', () => {
+    // Builds the 3 alternative routes (Fastest / Shortest / Avoid Tolls) as
+    // real polylines between the actual FROM/TO points the user searched,
+    // instead of a fixed Thapar-to-Bus-Stand path.
+    function buildDynamicRoutes(fromCoord, toCoord, fromText, toText) {
+      const bow = Math.min(Math.max(haversineKm(fromCoord, toCoord) * 0.15, 0.3), 3.5);
+
+      const pathA = [
+        fromCoord,
+        bowPoint(fromCoord, toCoord, 0.33, bow),
+        bowPoint(fromCoord, toCoord, 0.66, bow * 0.6),
+        toCoord
+      ];
+      const pathB = [
+        fromCoord,
+        bowPoint(fromCoord, toCoord, 0.5, -bow * 0.35),
+        toCoord
+      ];
+      const pathC = [
+        fromCoord,
+        bowPoint(fromCoord, toCoord, 0.3, -bow * 1.8),
+        bowPoint(fromCoord, toCoord, 0.7, -bow * 1.3),
+        toCoord
+      ];
+
+      const distOf = (path) => {
+        let d = 0;
+        for (let i = 1; i < path.length; i++) d += haversineKm(path[i - 1], path[i]);
+        return d;
+      };
+
+      const distA = distOf(pathA);
+      const distB = distOf(pathB);
+      const distC = distOf(pathC);
+
+      const timeA = Math.max(4, Math.round((distA / 32) * 60));
+      const timeB = Math.max(4, Math.round((distB / 19) * 60));
+      const timeC = Math.max(4, Math.round((distC / 27) * 60));
+
+      return {
+        fastest: {
+          name: 'Route A (Recommended)', tag: 'RECOMMENDED - FASTEST',
+          distance: `${distA.toFixed(1)} km`, estTime: `${timeA} min`, totalTime: `${timeA} min`,
+          trafficCondition: 'Moderate Traffic', trafficColor: '#f59e0b',
+          statusLabel: 'Moderate Traffic &bull; via Junction Point A & Bypass',
+          waypoints: [fromText, 'Junction Point A (Signal Priority)', 'Bypass Segment', toText],
+          algorithm: 'Dijkstra / A* (Traffic-Weighted)',
+          pathCoords: pathA
+        },
+        shortest: {
+          name: 'Route B (Shortest Distance)', tag: 'SHORTEST DISTANCE',
+          distance: `${distB.toFixed(1)} km`, estTime: `${timeB} min`, totalTime: `${timeB} min`,
+          trafficCondition: 'Heavy Traffic', trafficColor: '#ef4444',
+          statusLabel: 'Heavy Traffic &bull; via City Market Crossing (Delay +5m)',
+          waypoints: [fromText, 'City Market Crossing', toText],
+          algorithm: 'Dijkstra (Distance-Only)',
+          pathCoords: pathB
+        },
+        avoidTolls: {
+          name: 'Route C (Low Traffic & Toll Free)', tag: 'AVOID TOLLS / LEAST TRAFFIC',
+          distance: `${distC.toFixed(1)} km`, estTime: `${timeC} min`, totalTime: `${timeC} min`,
+          trafficCondition: 'Low Traffic', trafficColor: '#10b981',
+          statusLabel: 'Low Traffic &bull; via Outer Ring Link (Toll Free)',
+          waypoints: [fromText, 'Outer Ring Link', 'South Peripheral Road', toText],
+          algorithm: 'A* with Avoid-Tolls Constraint',
+          pathCoords: pathC
+        }
+      };
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const query = window.UrbanFlowData.getLastRouteQuery();
 
       const fromText = urlParams.get('from') || query.from;
       const toText = urlParams.get('to') || query.to;
       const prefText = urlParams.get('pref') || query.pref;
+      const cityKey = window.UrbanFlowData.getSelectedCityKey();
 
       document.getElementById('displayFrom').textContent = fromText;
       document.getElementById('displayTo').textContent = toText;
@@ -211,42 +224,55 @@
       else if (prefText === 'avoidTolls') prefLabel = 'Avoid Tolls / Low Traffic';
       document.getElementById('displayPref').textContent = prefLabel;
 
-      const city = window.UrbanFlowData.getCityData('patiala');
+      const city = window.UrbanFlowData.getCityData(cityKey);
       routeMap = createLeafletMap('routeMap', city.lat, city.lon, 13);
 
-      selectRoute(prefText && window.UrbanFlowData.ROUTE_COMPARISONS[prefText] ? prefText : 'fastest');
+      const shortFrom = fromText.split(',')[0].trim();
+      const shortTo = toText.split(',')[0].trim();
+      document.getElementById('mapRouteHeader').textContent = `Dynamic Path Geometry • ${shortFrom} to ${shortTo}`;
+
+      // Resolve real coordinates for whatever the user actually searched
+      const [fromCoord, toCoord] = await Promise.all([
+        geocodePlace(fromText, cityKey),
+        geocodePlace(toText, cityKey)
+      ]);
+
+      ROUTES = buildDynamicRoutes(
+        fromCoord || [city.lat, city.lon],
+        toCoord || [city.lat, city.lon],
+        fromText,
+        toText
+      );
+
+      document.querySelector('#cardRouteA .route-time-dist h3').textContent = ROUTES.fastest.estTime;
+      document.querySelector('#cardRouteA .route-time-dist span').textContent = ROUTES.fastest.distance;
+      document.querySelector('#cardRouteB .route-time-dist h3').textContent = ROUTES.shortest.estTime;
+      document.querySelector('#cardRouteB .route-time-dist span').textContent = ROUTES.shortest.distance;
+      document.querySelector('#cardRouteC .route-time-dist h3').textContent = ROUTES.avoidTolls.estTime;
+      document.querySelector('#cardRouteC .route-time-dist span').textContent = ROUTES.avoidTolls.distance;
+
+      document.getElementById('statusA').innerHTML = ROUTES.fastest.statusLabel;
+      document.getElementById('statusB').innerHTML = ROUTES.shortest.statusLabel;
+      document.getElementById('statusC').innerHTML = ROUTES.avoidTolls.statusLabel;
+
+      selectRoute(prefText && ROUTES[prefText] ? prefText : 'fastest');
     });
 
     function selectRoute(key) {
-      currentKey = key;
-      const data = window.UrbanFlowData.ROUTE_COMPARISONS[key] || window.UrbanFlowData.ROUTE_COMPARISONS.fastest;
+      const data = ROUTES[key] || ROUTES.fastest;
 
       document.getElementById('cardRouteA').classList.toggle('selected', key === 'fastest');
       document.getElementById('cardRouteB').classList.toggle('selected', key === 'shortest');
       document.getElementById('cardRouteC').classList.toggle('selected', key === 'avoidTolls');
 
-      document.getElementById('routeSummaryTitle').textContent = `Route Details • ${data.estTime} (${data.distance})`;
-      
-      const wpList = document.getElementById('waypointList');
-      wpList.innerHTML = '';
-      data.waypoints.forEach((wp, idx) => {
-        const li = document.createElement('li');
-        li.className = 'waypoint-item' + (idx === data.waypoints.length - 1 ? ' dest' : '');
-        li.textContent = wp;
-        wpList.appendChild(li);
-      });
-
       if (routeMap) {
         if (activePolyline) routeMap.removeLayer(activePolyline);
         alternativePolylines.forEach(p => routeMap.removeLayer(p));
         alternativePolylines = [];
-        if (carMarker) routeMap.removeLayer(carMarker);
-        if (animationInterval) clearInterval(animationInterval);
-        document.getElementById('navStatusBanner').style.display = 'none';
 
-        Object.keys(window.UrbanFlowData.ROUTE_COMPARISONS).forEach(k => {
+        Object.keys(ROUTES).forEach(k => {
           if (k !== key) {
-            const alt = window.UrbanFlowData.ROUTE_COMPARISONS[k];
+            const alt = ROUTES[k];
             const altLine = L.polyline(alt.pathCoords, {
               color: '#4B5563',
               weight: 4,
@@ -276,35 +302,6 @@
 
         routeMap.fitBounds(activePolyline.getBounds(), { padding: [40, 40] });
       }
-    }
-
-    function startNavigationSimulation() {
-      const data = window.UrbanFlowData.ROUTE_COMPARISONS[currentKey] || window.UrbanFlowData.ROUTE_COMPARISONS.fastest;
-      const coords = data.pathCoords;
-      if (!coords || coords.length < 2 || !routeMap) return;
-
-      document.getElementById('navStatusBanner').style.display = 'block';
-
-      if (carMarker) routeMap.removeLayer(carMarker);
-      if (animationInterval) clearInterval(animationInterval);
-
-      carMarker = L.marker(coords[0], {
-        icon: createCustomPin('#06B6D4', '🚗')
-      }).addTo(routeMap);
-
-      let step = 0;
-      const totalSteps = coords.length;
-
-      animationInterval = setInterval(() => {
-        step++;
-        if (step >= totalSteps) {
-          clearInterval(animationInterval);
-          document.getElementById('navStatusBanner').innerHTML = '<strong>🎉 Destination Reached!</strong> You have arrived at Patiala Bus Stand.';
-          return;
-        }
-        carMarker.setLatLng(coords[step]);
-        document.getElementById('navStatusBanner').innerHTML = `<i class="fa-solid fa-location-arrow"></i> Navigating: Approaching <strong>${data.waypoints[step] || 'Waypoint'}</strong>. ETA: ${Math.max(1, 16 - step * 3)} min.`;
-      }, 2000);
     }
   </script>
 </body>

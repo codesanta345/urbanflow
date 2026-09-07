@@ -29,13 +29,20 @@
       <a href="traffic-manager.html" class="nav-btn-icon">
         <i class="fa-solid fa-traffic-light"></i> Signal Ops
       </a>
-      <div class="user-badge">
-        <div class="avatar-circle" id="navUserAvatar" style="background:#EF4444;">U</div>
-        <span id="navUserName">User</span>
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar" style="background:#EF4444;">U</div>
+          <span id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Administrator Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
       </div>
-      <button class="logout-btn" onclick="UrbanFlowData.logout()">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
     </div>
   </nav>
 

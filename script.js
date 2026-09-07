@@ -67,6 +67,7 @@ function updateNavUser() {
   const nameEl = document.getElementById('navUserName');
   const roleEl = document.getElementById('navUserRole');
   const avatarEl = document.getElementById('navUserAvatar');
+  const modeEl = document.getElementById('navUserModeLabel');
 
   // Name and initial always come from whoever signed in
   const fullName = user.displayName || user.username || 'Guest';
@@ -80,7 +81,32 @@ function updateNavUser() {
   if (avatarEl) {
     avatarEl.textContent = fullName.charAt(0).toUpperCase();
   }
+  if (modeEl) {
+    modeEl.textContent = getRoleModeLabel(user.role);
+  }
 }
+
+function getRoleModeLabel(role) {
+  if (role === 'traffic_manager') return 'Traffic Authority Mode';
+  if (role === 'admin') return 'Administrator Mode';
+  return 'Commuter Mode';
+}
+
+// Clicking the username badge opens a small account menu (current mode +
+// Log Out), like the account dropdown on most sites, instead of a bare
+// logout icon sitting next to the name.
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  const wrap = e.currentTarget.closest('.user-menu-wrap');
+  if (!wrap) return;
+  const willOpen = !wrap.classList.contains('open');
+  document.querySelectorAll('.user-menu-wrap.open').forEach(w => w.classList.remove('open'));
+  if (willOpen) wrap.classList.add('open');
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.user-menu-wrap.open').forEach(w => w.classList.remove('open'));
+});
 
 // Leaflet map helper
 function createLeafletMap(containerId, lat, lon, zoom = 13) {
@@ -357,6 +383,34 @@ function attachOptionDropdown(target, config = {}) {
     refresh: () => { if (isOpen) render(input.value); },
     setOptions: (next) => { settings.options = next; if (isOpen) render(input.value); }
   };
+// Haversine distance in km between two [lat, lon] points
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = (b[0] - a[0]) * Math.PI / 180;
+  const dLon = (b[1] - a[1]) * Math.PI / 180;
+  const lat1 = a[0] * Math.PI / 180;
+  const lat2 = b[0] * Math.PI / 180;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// Point at fraction `t` along the line from a to b, nudged sideways by
+// `offsetKm` (perpendicular to the line). Used to bow alternate route
+// polylines away from the straight line so they read as distinct paths.
+function bowPoint(a, b, t, offsetKm) {
+  const lat = a[0] + (b[0] - a[0]) * t;
+  const lon = a[1] + (b[1] - a[1]) * t;
+  const dLat = b[0] - a[0];
+  const dLon = b[1] - a[1];
+  const len = Math.sqrt(dLat * dLat + dLon * dLon) || 1;
+  const perpLat = -dLon / len;
+  const perpLon = dLat / len;
+  const kmPerDegLat = 111;
+  const kmPerDegLon = 111 * Math.cos(a[0] * Math.PI / 180);
+  return [
+    lat + (perpLat * offsetKm) / kmPerDegLat,
+    lon + (perpLon * offsetKm) / kmPerDegLon
+  ];
 }
 
 // Geocoding helper for city search
@@ -397,4 +451,29 @@ async function geocodeCity(query, onSuccess, onError) {
   } catch (err) {
     if (onError) onError('Network error reaching map service. Using fallback coordinates.');
   }
+}
+
+// Resolve an arbitrary place/address string to [lat, lon] coordinates for
+// routing. Checks the local landmark list first (instant, offline), then
+// falls back to a live OpenStreetMap Nominatim lookup so any real address
+// the user types still resolves to its true location.
+async function geocodePlace(query, cityKey) {
+  const local = window.UrbanFlowData ? window.UrbanFlowData.findPlaceCoords(query, cityKey) : null;
+  const knownLandmark = window.UrbanFlowData && window.UrbanFlowData.LANDMARKS.some(
+    l => l.name.toLowerCase() === (query || '').trim().toLowerCase() ||
+         l.name.toLowerCase().includes((query || '').trim().toLowerCase())
+  );
+  if (knownLandmark && local) return local;
+
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if (data && data.length > 0) {
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    }
+  } catch (err) {
+    // network unavailable — fall through to local/offset fallback
+  }
+
+  return local;
 }

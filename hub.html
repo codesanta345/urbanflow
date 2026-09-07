@@ -23,14 +23,20 @@
         <i class="fa-solid fa-map-location-dot"></i> Live Map
       </a>
       
-      <div class="user-badge">
-        <div class="avatar-circle" id="navUserAvatar">U</div>
-        <span id="navUserName">User</span>
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar">U</div>
+          <span id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Commuter Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
       </div>
-
-      <button class="logout-btn" onclick="UrbanFlowData.logout()" title="Log out">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
     </div>
   </nav>
 
@@ -127,15 +133,6 @@
           desc: 'Request an urgent ambulance, fire engine, or police escort with automatic location transmission and route clearance.',
           actionText: 'Request Emergency SOS',
           link: 'emergency.html'
-        },
-        {
-          icon: '📡',
-          badge: 'Live Map Explorer',
-          badgeClass: '',
-          title: 'Live City Traffic Map',
-          desc: 'Explore city-wide real-time traffic conditions, search any area, zoom in/out, and check live congestion levels across streets.',
-          actionText: 'Open Live Map',
-          link: 'journey.html#city-search'
         }
       ],
 
@@ -167,15 +164,6 @@
           desc: 'Monitor active emergency vehicles along urban corridors, override signal cycles to green, and coordinate hospital transit paths.',
           actionText: 'Manage Emergency Priority',
           link: 'emergency.html'
-        },
-        {
-          icon: '📈',
-          badge: 'Sensor Telemetry',
-          badgeClass: 'authority',
-          title: 'Live Sensor & Congestion Monitor',
-          desc: 'Inspect real-time telemetry from 142 road sensors, approach velocities, congestion heatmaps, and signal phase durations.',
-          actionText: 'View Network Telemetry',
-          link: 'journey.html'
         }
       ],
 
