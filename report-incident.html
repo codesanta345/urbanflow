@@ -66,7 +66,7 @@
           <!-- Location -->
           <div class="input-group">
             <label for="incRoad">Location / Road Name</label>
-            <input type="text" id="incRoad" placeholder="e.g. Phase 7 Chowk near flyover" required>
+            <input type="text" id="incRoad" placeholder="Pick a known location or type your own..." required>
           </div>
 
           <!-- Severity -->
@@ -112,6 +112,12 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderIncidentFeed();
 
+      // Location bar dropdown: roads with live incidents first, then known landmarks
+      attachOptionDropdown('incRoad', {
+        options: buildLocationOptions,
+        emptyText: 'No known location matches — type the road name yourself'
+      });
+
       document.getElementById('incidentForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const type = document.getElementById('incType').value;
@@ -139,6 +145,35 @@
         renderIncidentFeed();
       });
     });
+
+    // Builds the option list for the Location / Road Name input bar
+    function buildLocationOptions() {
+      const seen = new Set();
+      const options = [];
+
+      // Roads that already have an active incident logged
+      window.UrbanFlowData.getIncidents().forEach(inc => {
+        const road = (inc.road || '').trim();
+        if (!road || seen.has(road.toLowerCase())) return;
+        seen.add(road.toLowerCase());
+        options.push({
+          value: road,
+          label: road,
+          icon: '⚠️',
+          badge: inc.severity || 'Reported',
+          group: 'Roads with active incidents'
+        });
+      });
+
+      // Known landmarks, junctions and corridors
+      window.UrbanFlowData.getLandmarkOptions('patiala').forEach(opt => {
+        if (seen.has(opt.value.toLowerCase())) return;
+        seen.add(opt.value.toLowerCase());
+        options.push(opt);
+      });
+
+      return options;
+    }
 
     function renderIncidentFeed() {
       const feedContainer = document.getElementById('incidentsFeedList');

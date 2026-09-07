@@ -1263,6 +1263,106 @@ input, select, textarea {
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.1);
   color: #DDD6FE;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Reusable Option Dropdown (Combobox) on input bars */
+.uf-combo {
+  position: relative;
+  display: block;
+  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.uf-combo input.uf-combo-input {
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+.uf-combo-caret {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #A78BFA;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.uf-combo-caret:hover {
+  background: rgba(124, 58, 237, 0.25);
+  color: #fff;
+}
+
+.uf-combo-caret i {
+  transition: transform 0.2s ease;
+}
+
+.uf-combo.open .uf-combo-caret i {
+  transform: rotate(180deg);
+}
+
+.uf-combo.open input.uf-combo-input {
+  border-color: #8B5CF6;
+}
+
+.uf-combo-panel {
+  max-height: 280px;
+}
+
+.uf-combo-group {
+  padding: 8px 14px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #8B8FA3;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.uf-combo-empty {
+  padding: 14px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.suggestion-item.active {
+  background: rgba(124, 58, 237, 0.35);
+}
+
+.suggestion-item .sugg-left {
+  min-width: 0;
+}
+
+.sugg-note {
+  display: block;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9CA3AF;
+  margin-top: 2px;
+}
+
+.uf-combo-mark {
+  background: transparent;
+  color: #A78BFA;
+  font-weight: 700;
 }
 
 /* Journey Layout Grid */
