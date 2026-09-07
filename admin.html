@@ -207,28 +207,8 @@
               <th>Status</th>
             </tr>
           </thead>
-          <tbody>
-            <tr>
-              <td><strong> Chaudhary</strong></td>
-              <td><span class="hub-card-badge">Commuter / Driver</span></td>
-              <td>Standard User</td>
-              <td>Route planning, traffic map viewing, incident reporting</td>
-              <td><span style="color:#059669; font-weight:600;">● Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>Agrim Bhatt</strong></td>
-              <td><span class="hub-card-badge authority">Traffic Authority</span></td>
-              <td>Traffic Manager</td>
-              <td>Adaptive signal adjustments, manual overrides, incident verification</td>
-              <td><span style="color:#059669; font-weight:600;">● Active</span></td>
-            </tr>
-            <tr>
-              <td><strong>Shruti</strong></td>
-              <td><span class="hub-card-badge admin">System Administrator</span></td>
-              <td>Full Root Admin</td>
-              <td>Complete infrastructure access, user management, ML model retraining</td>
-              <td><span style="color:#059669; font-weight:600;">● Active</span></td>
-            </tr>
+          <tbody id="accessMatrixBody">
+            <!-- Injected via JavaScript from the live session + staff directory -->
           </tbody>
         </table>
       </div>
@@ -283,7 +263,37 @@
       // Sync active incident count
       const count = window.UrbanFlowData.getIncidents().length;
       document.getElementById('adminIncCount').textContent = count;
+
+      renderAccessMatrix();
     });
+
+    // Access matrix: the live signed-in account first, then the staff directory
+    function renderAccessMatrix() {
+      const body = document.getElementById('accessMatrixBody');
+      const badgeClass = { admin: 'admin', traffic_manager: 'authority', user: '' };
+
+      body.innerHTML = '';
+      window.UrbanFlowData.getAccessMatrix().forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <strong>${escapeHtml(row.displayName)}</strong>
+            ${row.isCurrent ? '<span class="hub-card-badge" style="margin-left:8px; font-size:10px;">This session</span>' : ''}
+          </td>
+          <td><span class="hub-card-badge ${badgeClass[row.role] || ''}">${escapeHtml(row.roleTitle)}</span></td>
+          <td>${escapeHtml(row.accessLevel)}</td>
+          <td>${escapeHtml(row.permissions)}</td>
+          <td><span style="color:#059669; font-weight:600;">● Active</span></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
   </script>
 </body>
 </html>

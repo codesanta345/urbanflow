@@ -16,12 +16,61 @@ const UrbanFlowData = (() => {
     TOAST_FLAG: 'uf_show_login_toast'
   };
 
-  // Demo user credentials with distinct roles
-  const USERS = [
-    { username: 'user', password: 'user123', role: 'user', displayName: 'Divya Chaudhary', roleTitle: 'Commuter / Driver', email: 'divya@urbanflow.io' },
-    { username: 'traffic_manager', password: 'traffic123', role: 'traffic_manager', displayName: 'Agrim Bhatt', roleTitle: 'Traffic Authority Officer', email: 'agrim.manager@urbanflow.io' },
-    { username: 'admin', password: 'admin123', role: 'admin', displayName: 'Shruti', roleTitle: 'System Administrator', email: 'shruti.admin@urbanflow.io' }
+  /**
+   * Staff directory. Access level is derived from WHO signs in — it is never
+   * offered as a choice on the login screen. Anyone not listed here signs in
+   * as a regular commuter.
+   */
+  const ROLE_DIRECTORY = [
+    {
+      role: 'traffic_manager',
+      roleTitle: 'Traffic Authority Officer',
+      displayName: 'Agrim Bhatt',
+      accessLevel: 'Traffic Manager',
+      permissions: 'Adaptive signal adjustments, manual overrides, incident verification',
+      aliases: ['agrim', 'agrim bhatt', 'abhatt']
+    },
+    {
+      role: 'admin',
+      roleTitle: 'System Administrator',
+      displayName: 'Shruti',
+      accessLevel: 'Full Root Admin',
+      permissions: 'Complete infrastructure access, user management, ML model retraining',
+      aliases: ['shruti', 'shruti admin']
+    }
   ];
+
+  // Everyone else
+  const COMMUTER_PROFILE = {
+    role: 'user',
+    roleTitle: 'Commuter / Driver',
+    accessLevel: 'Standard User',
+    permissions: 'Route planning, traffic map viewing, incident reporting'
+  };
+
+  /**
+   * The three access levels a person can sign in as. The role picked on the
+   * login form is what defines the session's access type — the directory above
+   * only supplies the display name for people it knows.
+   */
+  const ROLE_PROFILES = {
+    user: {
+      role: COMMUTER_PROFILE.role,
+      roleTitle: COMMUTER_PROFILE.roleTitle,
+      accessLevel: COMMUTER_PROFILE.accessLevel,
+      permissions: COMMUTER_PROFILE.permissions
+    }
+  };
+
+  ROLE_DIRECTORY.forEach(person => {
+    if (ROLE_PROFILES[person.role]) return;
+    ROLE_PROFILES[person.role] = {
+      role: person.role,
+      roleTitle: person.roleTitle,
+      accessLevel: person.accessLevel,
+      permissions: person.permissions
+    };
+  });
 
   // Comprehensive Landmarks & Places for Instant Autocomplete Suggestions
   const LANDMARKS = [
@@ -179,6 +228,27 @@ const UrbanFlowData = (() => {
     }
   };
 
+  // Emergency dispatch bases (approximate Patiala coordinates for the demo corridor)
+  const EMERGENCY_BASES = [
+    { name: 'Rajindra Hospital, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.3340, lon: 76.3820 },
+    { name: 'Civil Hospital, Rajpura Road, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.3452, lon: 76.4012 },
+    { name: 'Columbia Asia Hospital, Bhadson Road, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.3565, lon: 76.3618 },
+    { name: 'Fire Station, Sirhind Road, Patiala', type: 'Fire Station', icon: '🚒', lat: 30.3262, lon: 76.4038 },
+    { name: 'Police Control Room, Mall Road, Patiala', type: 'Police Base', icon: '🚓', lat: 30.3395, lon: 76.3905 }
+  ];
+
+  // Emergency destinations / incident sites
+  const EMERGENCY_SITES = [
+    { name: 'Phase 7 Industrial Area, Patiala', type: 'Industrial Zone', icon: '🏭', lat: 30.3544, lon: 76.3688 },
+    { name: 'Phase 7 Chowk, Urban Estate, Patiala', type: 'Intersection', icon: '🚦', lat: 30.3420, lon: 76.3810 },
+    { name: 'Thapar University Main Gate, Patiala', type: 'Campus', icon: '🏫', lat: 30.3548, lon: 76.3660 },
+    { name: 'Patiala Bus Stand, Near Railway Road', type: 'Transit Hub', icon: '🚌', lat: 30.3298, lon: 76.3980 },
+    { name: 'Leela Bhawan Market, Patiala', type: 'Commercial', icon: '🛍️', lat: 30.3322, lon: 76.3930 },
+    { name: 'Bypass Road Exit 2, Patiala', type: 'Highway', icon: '🛣️', lat: 30.3412, lon: 76.3815 },
+    { name: 'Fountain Chowk, Lower Mall Rd, Patiala', type: 'Intersection', icon: '🚦', lat: 30.3378, lon: 76.3875 },
+    { name: 'Baradari Gardens, Patiala', type: 'Park', icon: '🌳', lat: 30.3430, lon: 76.3960 }
+  ];
+
   // Seed Incidents
   const DEFAULT_INCIDENTS = [
     {
@@ -327,40 +397,30 @@ const UrbanFlowData = (() => {
     }
   };
 
+  // Session used before anyone has signed in
+  const GUEST_SESSION = {
+    username: 'guest',
+    role: 'user',
+    displayName: 'Guest',
+    roleTitle: COMMUTER_PROFILE.roleTitle,
+    accessLevel: COMMUTER_PROFILE.accessLevel,
+    permissions: COMMUTER_PROFILE.permissions,
+    email: ''
+  };
+
   // State Helpers
   function getCurrentUser() {
     try {
       const stored = localStorage.getItem(STORAGE_KEYS.USER);
       if (stored) return JSON.parse(stored);
-      return {
-        username: 'user',
-        role: 'user',
-        displayName: 'Divya Chaudhary',
-        roleTitle: 'Commuter / Driver',
-        email: 'divya@urbanflow.io'
-      };
+      return Object.assign({}, GUEST_SESSION);
     } catch (e) {
-      return {
-        username: 'user',
-        role: 'user',
-        displayName: 'Divya Chaudhary',
-        roleTitle: 'Commuter / Driver',
-        email: 'divya@urbanflow.io'
-      };
+      return Object.assign({}, GUEST_SESSION);
     }
   }
 
   function setCurrentUser(user) {
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-  }
-
-  function switchRole(roleKey) {
-    const match = USERS.find(u => u.role === roleKey);
-    if (match) {
-      setCurrentUser(match);
-      return match;
-    }
-    return null;
   }
 
   function markLoginToast() {
@@ -380,43 +440,92 @@ const UrbanFlowData = (() => {
     window.location.href = 'login.html';
   }
 
-  function authenticate(userType, username, password) {
-    const cleanUsername = (username || '').trim().toLowerCase();
-    const cleanPw = (password || '').trim();
-    const cleanRole = (userType || '').trim().toLowerCase();
+  // 'Agrim.Bhatt' / 'agrim_bhatt' / '  Agrim  Bhatt ' all reduce to 'agrim bhatt'
+  function normalizeName(value) {
+    return (value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[._\-]+/g, ' ')
+      .replace(/\s+/g, ' ');
+  }
 
-    // Check predefined
-    const match = USERS.find(u =>
-      u.role === cleanRole &&
-      (u.username.toLowerCase() === cleanUsername || cleanUsername === u.role) &&
-      u.password === cleanPw
+  // 'vasu.pal' -> 'Vasu Pal'
+  function toDisplayName(value) {
+    return normalizeName(value)
+      .split(' ')
+      .filter(Boolean)
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }
+
+  /**
+   * Works out the access level from the name being used to sign in.
+   * Listed staff get their operational role automatically; everyone else
+   * is a commuter. The login form never asks for or reveals any of this.
+   */
+  function resolveIdentity(username) {
+    const key = normalizeName(username);
+
+    const staff = ROLE_DIRECTORY.find(person =>
+      normalizeName(person.displayName) === key ||
+      person.aliases.some(alias => normalizeName(alias) === key)
     );
 
-    if (match) {
-      setCurrentUser(match);
-      markLoginToast();
-      return { success: true, user: match };
-    }
-
-    if (cleanPw.length >= 4) {
-      let roleTitle = 'Commuter / Driver';
-      if (cleanRole === 'traffic_manager') roleTitle = 'Traffic Authority Officer';
-      if (cleanRole === 'admin') roleTitle = 'System Administrator';
-
-      const session = {
-        username: cleanUsername || 'user',
-        role: cleanRole,
-        displayName: cleanUsername.charAt(0).toUpperCase() + cleanUsername.slice(1),
-        roleTitle: roleTitle,
-        email: `${cleanUsername}@urbanflow.io`,
-        loginTime: new Date().toISOString()
+    if (staff) {
+      return {
+        role: staff.role,
+        roleTitle: staff.roleTitle,
+        displayName: staff.displayName,
+        accessLevel: staff.accessLevel,
+        permissions: staff.permissions
       };
-      setCurrentUser(session);
-      markLoginToast();
-      return { success: true, user: session };
     }
 
-    return { success: false, message: 'Invalid credentials. Please enter a valid username and password (at least 4 characters).' };
+    return {
+      role: COMMUTER_PROFILE.role,
+      roleTitle: COMMUTER_PROFILE.roleTitle,
+      displayName: toDisplayName(username) || 'Commuter',
+      accessLevel: COMMUTER_PROFILE.accessLevel,
+      permissions: COMMUTER_PROFILE.permissions
+    };
+  }
+
+  function authenticate(userType, username, password) {
+    const selectedRole = (userType || '').trim();
+    const cleanUsername = (username || '').trim();
+    const cleanPw = (password || '').trim();
+
+    // The access level the user picks is what governs the session
+    const profile = ROLE_PROFILES[selectedRole];
+    if (!profile) {
+      return { success: false, message: 'Please select your user type to continue.' };
+    }
+
+    if (!cleanUsername) {
+      return { success: false, message: 'Please enter your username to continue.' };
+    }
+
+    if (cleanPw.length < 4) {
+      return { success: false, message: 'Please enter a password of at least 4 characters.' };
+    }
+
+    // The directory is only consulted for a friendly display name
+    const identity = resolveIdentity(cleanUsername);
+
+    const session = {
+      username: cleanUsername,
+      role: profile.role,
+      displayName: identity.displayName,
+      roleTitle: profile.roleTitle,
+      accessLevel: profile.accessLevel,
+      permissions: profile.permissions,
+      email: `${normalizeName(cleanUsername).replace(/\s+/g, '.') || 'user'}@urbanflow.io`,
+      loginTime: new Date().toISOString()
+    };
+
+    setCurrentUser(session);
+    markLoginToast();
+    return { success: true, user: session };
   }
 
   function searchLandmarks(query, cityFilter) {
@@ -428,6 +537,98 @@ const UrbanFlowData = (() => {
       const matchText = item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q);
       return matchText;
     }).slice(0, 6);
+  }
+
+  /* ---- Option list providers for the input-bar dropdowns ---- */
+
+  // All landmarks as dropdown options, grouped by city with the active city first
+  function getLandmarkOptions(cityKey) {
+    const active = (cityKey || '').toLowerCase();
+
+    const sorted = LANDMARKS.slice().sort((a, b) => {
+      const aActive = a.city === active ? 0 : 1;
+      const bActive = b.city === active ? 0 : 1;
+      if (aActive !== bActive) return aActive - bActive;
+      if (a.city !== b.city) return a.city.localeCompare(b.city);
+      return a.name.localeCompare(b.name);
+    });
+
+    return sorted.map(item => {
+      const city = CITIES[item.city];
+      const cityLabel = city ? city.fullName : item.city;
+      return {
+        value: item.name,
+        label: item.name,
+        icon: item.icon,
+        badge: item.category,
+        group: item.city === active ? `${cityLabel} (current area)` : cityLabel
+      };
+    });
+  }
+
+  // Preset cities as dropdown options for the area search bar
+  function getCityOptions() {
+    return Object.keys(CITIES).map(key => {
+      const city = CITIES[key];
+      return {
+        key,
+        value: city.name,
+        label: city.fullName,
+        icon: '🏙️',
+        badge: city.state,
+        note: `${city.highTrafficRoads} high-traffic roads • avg ${city.avgEta}`
+      };
+    });
+  }
+
+  // Emergency dispatch bases / destinations as dropdown options
+  function getEmergencyBaseOptions() {
+    return EMERGENCY_BASES.map(base => ({
+      value: base.name,
+      label: base.name,
+      icon: base.icon,
+      badge: base.type,
+      lat: base.lat,
+      lon: base.lon
+    }));
+  }
+
+  function getEmergencySiteOptions() {
+    return EMERGENCY_SITES.map(site => ({
+      value: site.name,
+      label: site.name,
+      icon: site.icon,
+      badge: site.type,
+      lat: site.lat,
+      lon: site.lon
+    }));
+  }
+
+  // Access matrix rows for the admin console: the signed-in account plus known staff
+  function getAccessMatrix() {
+    const current = getCurrentUser();
+    const rows = [{
+      displayName: current.displayName || current.username || 'Guest',
+      roleTitle: current.roleTitle || COMMUTER_PROFILE.roleTitle,
+      role: current.role || 'user',
+      accessLevel: current.accessLevel || COMMUTER_PROFILE.accessLevel,
+      permissions: current.permissions || COMMUTER_PROFILE.permissions,
+      isCurrent: true
+    }];
+
+    ROLE_DIRECTORY.forEach(person => {
+      if (normalizeName(person.displayName) === normalizeName(rows[0].displayName)) return;
+      rows.push({
+        displayName: person.displayName,
+        roleTitle: person.roleTitle,
+        role: person.role,
+        accessLevel: person.accessLevel,
+        permissions: person.permissions,
+        isCurrent: false
+      });
+    });
+
+    return rows;
   }
 
   function getIncidents() {
@@ -527,14 +728,20 @@ const UrbanFlowData = (() => {
   }
 
   return {
-    USERS,
     CITIES,
     LANDMARKS,
+    EMERGENCY_BASES,
+    EMERGENCY_SITES,
     ML_PREDICTIONS,
     ROUTE_COMPARISONS,
+    getLandmarkOptions,
+    getCityOptions,
+    getEmergencyBaseOptions,
+    getEmergencySiteOptions,
+    getAccessMatrix,
+    resolveIdentity,
     getCurrentUser,
     setCurrentUser,
-    switchRole,
     markLoginToast,
     shouldShowLoginToast,
     logout,

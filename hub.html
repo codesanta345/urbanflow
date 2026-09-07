@@ -19,16 +19,6 @@
     <div class="spacer"></div>
 
     <div class="dash-nav-links">
-      <!-- Quick Role Switcher for instant evaluation -->
-      <div class="role-switch-wrap">
-        <span style="color: var(--text-muted);"><i class="fa-solid fa-users"></i> Role:</span>
-        <select id="roleSwitcherSelect" onchange="handleRoleSwitch(this.value)">
-          <option value="user">👤 User (Commuter)</option>
-          <option value="traffic_manager">🚦 Traffic Manager</option>
-          <option value="admin">⚙️ System Admin</option>
-        </select>
-      </div>
-
       <a href="journey.html" class="nav-btn-icon">
         <i class="fa-solid fa-map-location-dot"></i> Live Map
       </a>
@@ -238,9 +228,8 @@
       const user = window.UrbanFlowData.getCurrentUser();
       const role = (user && user.role) ? user.role : 'user';
 
-      // Update Top Nav
-      document.getElementById('roleSwitcherSelect').value = role;
-      const userName = user.displayName || user.username || 'User';
+      // Update Top Nav with the name captured at login
+      const userName = user.displayName || user.username || 'Guest';
       document.getElementById('navUserName').textContent = userName.split(' ')[0];
       document.getElementById('navUserAvatar').textContent = userName.charAt(0).toUpperCase();
 
@@ -302,14 +291,6 @@
       });
     }
 
-    // Role switcher dropdown handler
-    function handleRoleSwitch(newRole) {
-      const switchedUser = window.UrbanFlowData.switchRole(newRole);
-      if (switchedUser) {
-        showToast('Role Switched!', `Now viewing dashboard as ${switchedUser.roleTitle}`);
-        renderDashboardForRole();
-      }
-    }
   </script>
 </body>
 </html>

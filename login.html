@@ -21,7 +21,7 @@
       <div class="login-error" id="loginErrorMsg"></div>
 
       <form id="loginForm">
-        <!-- 3 User Types -->
+        <!-- 3 User Types — the role chosen here defines the access level -->
         <div class="field">
           <label for="userType"><i class="fa-solid fa-user-shield"></i> User Type</label>
           <select id="userType" required>
@@ -35,7 +35,7 @@
         <!-- Username -->
         <div class="field">
           <label for="username"><i class="fa-solid fa-user"></i> Username</label>
-          <input type="text" id="username" placeholder="e.g. user, traffic_manager, or admin" required autocomplete="username">
+          <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
         </div>
 
         <!-- Password with toggle visibility -->
@@ -52,22 +52,6 @@
         <button type="submit" class="submit-btn" id="submitBtn">
           SIGN IN <i class="fa-solid fa-arrow-right"></i>
         </button>
-
-        <!-- 1-Click Demo Accounts for easy grading/evaluation -->
-        <div class="demo-credentials">
-          <p>Quick Demo Sign-In (Click any role):</p>
-          <div class="demo-chips">
-            <button type="button" class="demo-chip" onclick="fillDemo('user', 'user', 'user123')">
-              👤 Commuter (User)
-            </button>
-            <button type="button" class="demo-chip" onclick="fillDemo('traffic_manager', 'traffic_manager', 'traffic123')">
-              🚦 Traffic Manager
-            </button>
-            <button type="button" class="demo-chip" onclick="fillDemo('admin', 'admin', 'admin123')">
-              ⚙️ Admin
-            </button>
-          </div>
-        </div>
       </form>
     </div>
   </div>
@@ -90,16 +74,6 @@
       }
     });
 
-    // Fill demo credentials helper
-    function fillDemo(type, username, password) {
-      document.getElementById('userType').value = type;
-      document.getElementById('username').value = username;
-      document.getElementById('password').value = password;
-      document.getElementById('loginErrorMsg').style.display = 'none';
-      // Auto submit for convenience
-      doLogin(type, username, password);
-    }
-
     // Login form submission & authentication
     const form = document.getElementById('loginForm');
     const errorBox = document.getElementById('loginErrorMsg');
@@ -109,10 +83,8 @@
       const userType = document.getElementById('userType').value;
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-      doLogin(userType, username, password);
-    });
 
-    function doLogin(userType, username, password) {
+      // The user type selected above is what defines the access level
       const result = window.UrbanFlowData.authenticate(userType, username, password);
 
       if (result.success) {
@@ -123,7 +95,7 @@
         errorBox.textContent = result.message || 'Invalid username or password.';
         errorBox.style.display = 'block';
       }
-    }
+    });
   </script>
 </body>
 </html>

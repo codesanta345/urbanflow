@@ -95,13 +95,13 @@
         <h3>2. Emergency Corridor Path</h3>
         
         <div class="input-group">
-          <label><i class="fa-solid fa-hospital" style="color: #EF4444;"></i> Dispatch Origin</label>
-          <input type="text" id="emOrigin" value="Rajindra Hospital, Patiala" readonly style="background:#E5E7EB;">
+          <label for="emOrigin"><i class="fa-solid fa-hospital" style="color: #EF4444;"></i> Dispatch Origin</label>
+          <input type="text" id="emOrigin" value="Rajindra Hospital, Patiala" placeholder="Select a dispatch base...">
         </div>
 
         <div class="input-group">
-          <label><i class="fa-solid fa-triangle-exclamation" style="color: #F59E0B;"></i> Destination / Incident Site</label>
-          <input type="text" id="emDestination" value="Phase 7 Industrial Area, Patiala" placeholder="Emergency destination address">
+          <label for="emDestination"><i class="fa-solid fa-triangle-exclamation" style="color: #F59E0B;"></i> Destination / Incident Site</label>
+          <input type="text" id="emDestination" value="Phase 7 Industrial Area, Patiala" placeholder="Select or type the emergency site...">
         </div>
 
         <button type="button" class="btn-find-route" id="btnDispatchEmergency" onclick="dispatchEmergencyVehicle()" style="margin-top: 16px; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
@@ -141,28 +141,123 @@
     let emInterval = null;
     let selectedVehType = 'ambulance';
 
-    const EM_PATH = [
-      [30.3340, 76.3820], // Rajindra Hospital
-      [30.3380, 76.3860],
-      [30.3420, 76.3810], // Phase 7 Chowk
-      [30.3470, 76.3750],
-      [30.3544, 76.3688]  // Target site
-    ];
+    let emOriginMarker = null;
+    let emDestMarker = null;
+    let emOriginPoint = null;
+    let emDestPoint = null;
+    let emPath = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Initialize map at Rajindra Hospital
-      emMap = createLeafletMap('emergencyMap', 30.3340, 76.3820, 14);
+      const bases = window.UrbanFlowData.getEmergencyBaseOptions();
+      const sites = window.UrbanFlowData.getEmergencySiteOptions();
 
-      // Add Hospital Marker
-      L.marker([30.3340, 76.3820], {
-        icon: createCustomPin('#EF4444', '🏥')
-      }).addTo(emMap).bindPopup('<b>Rajindra Hospital</b><br>Emergency Response Base').openPopup();
+      // Match the pre-filled input values against the known base / site lists
+      emOriginPoint = findPoint(bases, document.getElementById('emOrigin').value) || bases[0];
+      emDestPoint = findPoint(sites, document.getElementById('emDestination').value) || sites[0];
 
-      // Add Target Site Marker
-      L.marker([30.3544, 76.3688], {
+      emMap = createLeafletMap('emergencyMap', emOriginPoint.lat, emOriginPoint.lon, 14);
+
+      emOriginMarker = L.marker([emOriginPoint.lat, emOriginPoint.lon], {
+        icon: createCustomPin('#EF4444', emOriginPoint.icon || '🏥')
+      }).addTo(emMap);
+
+      emDestMarker = L.marker([emDestPoint.lat, emDestPoint.lon], {
         icon: createCustomPin('#F59E0B', '🚨')
-      }).addTo(emMap).bindPopup('<b>Emergency Scene</b><br>Phase 7 Priority Destination');
+      }).addTo(emMap);
+
+      // Dispatch Origin dropdown (bases only — the fleet parks at known stations)
+      attachOptionDropdown('emOrigin', {
+        options: bases,
+        emptyText: 'No dispatch base matches',
+        onSelect: (item) => {
+          emOriginPoint = item;
+          refreshCorridor(true);
+        }
+      });
+
+      // Destination dropdown — known incident sites, free typing still geocodes
+      attachOptionDropdown('emDestination', {
+        options: sites,
+        emptyText: 'No listed site matches — type an address and press Tab to locate it',
+        onSelect: (item) => {
+          emDestPoint = item;
+          refreshCorridor(true);
+        }
+      });
+
+      // A typed-in destination is resolved on the map when the user leaves the field
+      document.getElementById('emDestination').addEventListener('blur', () => {
+        const typed = document.getElementById('emDestination').value.trim();
+        if (!typed || typed === emDestPoint.value) return;
+
+        const known = findPoint(sites, typed);
+        if (known) {
+          emDestPoint = known;
+          refreshCorridor(true);
+          return;
+        }
+
+        geocodeCity(typed, (place) => {
+          emDestPoint = { value: typed, label: typed, icon: '🚨', badge: 'Custom site', lat: place.lat, lon: place.lon };
+          refreshCorridor(true);
+        }, () => {
+          showToast('Location not found', `Could not place "${typed}" on the map. The corridor still uses the last known site.`);
+        });
+      });
+
+      refreshCorridor(true);
     });
+
+    function findPoint(list, name) {
+      const clean = (name || '').trim().toLowerCase();
+      return list.find(item => item.value.toLowerCase() === clean) || null;
+    }
+
+    // Builds a corridor between origin and destination with a gentle arc through
+    // intermediate junctions, so the preempted path reads as a road route.
+    function buildCorridor(origin, dest) {
+      const points = [[origin.lat, origin.lon]];
+      const steps = 3;
+
+      for (let i = 1; i <= steps; i++) {
+        const t = i / (steps + 1);
+        const bend = Math.sin(t * Math.PI) * 0.0035;
+        points.push([
+          origin.lat + (dest.lat - origin.lat) * t + bend,
+          origin.lon + (dest.lon - origin.lon) * t + bend * 0.6
+        ]);
+      }
+
+      points.push([dest.lat, dest.lon]);
+      return points;
+    }
+
+    function refreshCorridor(recenter) {
+      emPath = buildCorridor(emOriginPoint, emDestPoint);
+
+      emOriginMarker.setLatLng([emOriginPoint.lat, emOriginPoint.lon]);
+      emOriginMarker.setIcon(createCustomPin('#EF4444', emOriginPoint.icon || '🏥'));
+      emOriginMarker.bindPopup(`<b>${emOriginPoint.label}</b><br>${emOriginPoint.badge || 'Emergency Response Base'}`);
+
+      emDestMarker.setLatLng([emDestPoint.lat, emDestPoint.lon]);
+      emDestMarker.bindPopup(`<b>Emergency Scene</b><br>${emDestPoint.label}`);
+
+      document.getElementById('emMapTitle').textContent =
+        `Emergency Corridor Overview • ${emOriginPoint.label.split(',')[0]} → ${emDestPoint.label.split(',')[0]}`;
+
+      // Redraw an already-active corridor so the green wave follows the new path
+      if (emPolyline) {
+        emMap.removeLayer(emPolyline);
+        emPolyline = L.polyline(emPath, { color: '#EF4444', weight: 8, opacity: 0.95 }).addTo(emMap);
+      }
+
+      if (recenter) {
+        emMap.fitBounds(L.latLngBounds([
+          [emOriginPoint.lat, emOriginPoint.lon],
+          [emDestPoint.lat, emDestPoint.lon]
+        ]), { padding: [60, 60], maxZoom: 15 });
+      }
+    }
 
     function selectEmergencyVeh(type) {
       selectedVehType = type;
@@ -186,7 +281,7 @@
       window.UrbanFlowData.setEmergency({
         vehicle: selectedVehType,
         dispatchedAt: new Date().toLocaleTimeString(),
-        route: 'Rajindra Hospital -> Phase 7 Chowk -> Destination',
+        route: `${emOriginPoint.label} -> ${emDestPoint.label}`,
         preemptedIntersections: ['Phase 7 Chowk', 'Bypass South']
       });
 
@@ -197,8 +292,9 @@
       window.UrbanFlowData.updateSignals(signals);
 
       // Draw corridor polyline on map
+      emPath = buildCorridor(emOriginPoint, emDestPoint);
       if (emPolyline) emMap.removeLayer(emPolyline);
-      emPolyline = L.polyline(EM_PATH, {
+      emPolyline = L.polyline(emPath, {
         color: '#EF4444',
         weight: 8,
         opacity: 0.95
@@ -214,20 +310,20 @@
       if (emVehicleMarker) emMap.removeLayer(emVehicleMarker);
       if (emInterval) clearInterval(emInterval);
 
-      emVehicleMarker = L.marker(EM_PATH[0], {
+      emVehicleMarker = L.marker(emPath[0], {
         icon: createCustomPin('#EF4444', emoji)
       }).addTo(emMap);
 
       let step = 0;
       emInterval = setInterval(() => {
         step++;
-        if (step >= EM_PATH.length) {
+        if (step >= emPath.length) {
           clearInterval(emInterval);
           statusText.textContent = 'Vehicle Arrived on Scene';
           showToast('Arrived on Scene', 'Emergency unit reached destination. Corridor returned to standard cycle.');
           return;
         }
-        emVehicleMarker.setLatLng(EM_PATH[step]);
+        emVehicleMarker.setLatLng(emPath[step]);
       }, 2500);
     }
 

@@ -45,7 +45,7 @@
         </span>
         <div class="search-input-box">
           <i class="fa-solid fa-magnifying-glass search-icon-inside"></i>
-          <input type="text" id="citySearchInput" placeholder="Type city (e.g. Patiala, Chandigarh, Delhi, Mumbai)...">
+          <input type="text" id="citySearchInput" placeholder="Choose a city from the list or type any city name...">
         </div>
         <button class="btn-primary" id="btnSearchCity" style="padding: 10px 22px; font-size: 14px;">
           Locate City
@@ -111,13 +111,10 @@
 
         <form id="journeyForm" autocomplete="off">
           
-          <!-- FROM location with Instant Autocomplete Dropdown -->
+          <!-- FROM location with Option Dropdown + Instant Autocomplete -->
           <div class="input-group">
             <label for="fromInput"><i class="fa-solid fa-location-arrow" style="color: #10B981;"></i> FROM 📍</label>
-            <div class="autocomplete-wrapper">
-              <input type="text" id="fromInput" value="Thapar University Main Gate, Patiala" placeholder="Type starting point (e.g. Thapar, Bus Stand)..." required>
-              <div class="suggestions-dropdown" id="fromSuggestions"></div>
-            </div>
+            <input type="text" id="fromInput" value="Thapar University Main Gate, Patiala" placeholder="Pick a place or type (e.g. Thapar, Bus Stand)..." required>
           </div>
 
           <!-- Swap button -->
@@ -127,13 +124,10 @@
             </button>
           </div>
 
-          <!-- TO location with Instant Autocomplete Dropdown -->
+          <!-- TO location with Option Dropdown + Instant Autocomplete -->
           <div class="input-group">
             <label for="toInput"><i class="fa-solid fa-location-dot" style="color: #EF4444;"></i> TO 📍</label>
-            <div class="autocomplete-wrapper">
-              <input type="text" id="toInput" value="Patiala Bus Stand, Near Railway Road" placeholder="Type destination address (e.g. Bus Stand, Phase 7)..." required>
-              <div class="suggestions-dropdown" id="toSuggestions"></div>
-            </div>
+            <input type="text" id="toInput" value="Patiala Bus Stand, Near Railway Road" placeholder="Pick a place or type (e.g. Bus Stand, Phase 7)..." required>
           </div>
 
           <!-- Travel Preferences -->
@@ -200,6 +194,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       // 1. Initialize Map
       const defaultData = window.UrbanFlowData.getCityData('patiala');
+      document.getElementById('citySearchInput').value = defaultData.name;
       mapInstance = createLeafletMap('leafletMap', defaultData.lat, defaultData.lon, defaultData.zoom);
 
       if (mapInstance) {
@@ -220,23 +215,53 @@
         });
       });
 
-      // 3. Setup City Search Input
+      // 3. Setup City Search Input with a preset-city option dropdown
       const searchBtn = document.getElementById('btnSearchCity');
       const searchInput = document.getElementById('citySearchInput');
+
+      attachOptionDropdown('citySearchInput', {
+        options: () => window.UrbanFlowData.getCityOptions(),
+        emptyText: 'No preset city matches — press Enter to search the map',
+        noMatch: (query) => query.length >= 2 ? {
+          value: query,
+          label: `Search "${query}" on OpenStreetMap`,
+          icon: '🔍',
+          badge: 'Live lookup',
+          isLookup: true
+        } : null,
+        onSelect: (item) => {
+          if (item.isLookup) {
+            handleCitySearch(item.value);
+          } else {
+            selectCity(item.key);
+            setActiveChip(item.key);
+          }
+        }
+      });
 
       searchBtn.addEventListener('click', () => {
         handleCitySearch(searchInput.value);
       });
 
       searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
+        // The dropdown handles Enter when an option is highlighted
+        if (e.key === 'Enter' && !e.defaultPrevented) {
           handleCitySearch(searchInput.value);
         }
       });
 
-      // 4. Setup Smart Autocomplete for FROM and TO Inputs
-      setupAutocomplete('fromInput', 'fromSuggestions');
-      setupAutocomplete('toInput', 'toSuggestions');
+      // 4. Setup FROM / TO option dropdowns (full landmark list + type-to-filter)
+      const landmarkOptions = () => window.UrbanFlowData.getLandmarkOptions(currentCityKey);
+
+      attachOptionDropdown('fromInput', {
+        options: landmarkOptions,
+        emptyText: 'No saved place matches — you can still type your own'
+      });
+
+      attachOptionDropdown('toInput', {
+        options: landmarkOptions,
+        emptyText: 'No saved place matches — you can still type your own'
+      });
 
       // 5. Swap button
       document.getElementById('btnSwapLocations').addEventListener('click', () => {
@@ -287,77 +312,11 @@
       });
     });
 
-    // Smart Autocomplete Logic
-    function setupAutocomplete(inputId, dropdownId) {
-      const input = document.getElementById(inputId);
-      const dropdown = document.getElementById(dropdownId);
-
-      function updateSuggestions(query) {
-        const results = window.UrbanFlowData.searchLandmarks(query, currentCityKey);
-
-        // If local results are empty, try search across all cities
-        let finalResults = results;
-        if (finalResults.length === 0 && query.length >= 2) {
-          finalResults = window.UrbanFlowData.searchLandmarks(query, null);
-        }
-
-        if (finalResults.length === 0) {
-          dropdown.classList.remove('open');
-          dropdown.innerHTML = '';
-          return;
-        }
-
-        dropdown.innerHTML = '';
-        finalResults.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'suggestion-item';
-          div.innerHTML = `
-            <div class="sugg-left">
-              <span class="sugg-icon">${item.icon}</span>
-              <span class="sugg-text">${highlightMatch(item.name, query)}</span>
-            </div>
-            <span class="sugg-badge">${item.category}</span>
-          `;
-          div.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            input.value = item.name;
-            dropdown.classList.remove('open');
-            dropdown.innerHTML = '';
-          });
-          dropdown.appendChild(div);
-        });
-
-        dropdown.classList.add('open');
-      }
-
-      input.addEventListener('input', () => {
-        const val = input.value.trim();
-        if (val.length >= 1) {
-          updateSuggestions(val);
-        } else {
-          dropdown.classList.remove('open');
-          dropdown.innerHTML = '';
-        }
+    // Keep the preset city chips in sync when a city is picked from the dropdown
+    function setActiveChip(cityKey) {
+      document.querySelectorAll('.chip').forEach(chip => {
+        chip.classList.toggle('active', chip.getAttribute('data-city') === cityKey);
       });
-
-      input.addEventListener('focus', () => {
-        const val = input.value.trim();
-        if (val.length >= 1) {
-          updateSuggestions(val);
-        }
-      });
-
-      input.addEventListener('blur', () => {
-        setTimeout(() => {
-          dropdown.classList.remove('open');
-        }, 200);
-      });
-    }
-
-    function highlightMatch(text, query) {
-      if (!query) return text;
-      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-      return text.replace(regex, '<strong style="color: #A78BFA;">$1</strong>');
     }
 
     function selectCity(cityKey) {
@@ -383,6 +342,7 @@
     }
 
     function applyCityData(data) {
+      document.getElementById('citySearchInput').value = data.name || data.fullName || '';
       document.getElementById('currentCityLabel').textContent = `— ${data.fullName || data.name}`;
       document.getElementById('mapHeaderTitle').textContent = `Live Map View • ${data.fullName || data.name}`;
 
