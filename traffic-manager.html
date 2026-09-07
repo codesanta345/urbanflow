@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic Manager Dashboard | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role" style="background: rgba(217, 119, 6, 0.3); border: 1px solid rgba(217, 119, 6, 0.5);">
+      Traffic Authority Console
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> Feature Hub
+      </a>
+      <a href="admin.html" class="nav-btn-icon">
+        <i class="fa-solid fa-gear"></i> Admin View
+      </a>
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar" style="background:#F59E0B;">U</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="logout-btn" onclick="UrbanFlowData.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN TRAFFIC AUTHORITY DASHBOARD ===== -->
+  <main class="hub-main">
+    <div class="hub-welcome">
+      <div>
+        <h1>Smart Signal Controller & Incident Operations</h1>
+        <p>Real-time approach demand balancing, signal timing optimization, and incident verification desk.</p>
+      </div>
+    </div>
+
+    <!-- Active Emergency Alert Banner (if active) -->
+    <div id="tmEmergencyNotice" style="display:none; margin-bottom: 24px; background: #FEE2E2; border: 2px solid #EF4444; border-radius: var(--radius-md); padding: 16px 20px; color: #991B1B; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 24px;">🚨</span>
+        <div>
+          <h4 style="font-size: 15px; font-weight: 700; margin: 0;">EMERGENCY PREEMPTION ACTIVE</h4>
+          <p style="font-size: 13px; margin: 0;">An emergency vehicle is on corridor. Approach signal timings are locked to priority green.</p>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="resetEmergencyPreemption()">Reset Override</button>
+    </div>
+
+    <!-- ===== SECTION 1: SMART SIGNAL LOGIC (PDF Figure 5) ===== -->
+    <div class="signal-view-grid">
+      
+      <!-- Left: Interactive Intersection Box Diagram -->
+      <div class="signal-diagram-card">
+        <h3>Smart Traffic Signal Logic</h3>
+        <p>Adjust signal timing dynamically based on real-time vehicle density on each approach direction</p>
+
+        <div class="intersection-box">
+          <!-- Road Crossings -->
+          <div class="road-horizontal"></div>
+          <div class="road-vertical"></div>
+
+          <!-- Intersection Center with Signal Indicators -->
+          <div class="intersection-center">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <span class="mini-light green" id="lightNorth" title="North Signal"></span>
+              <span class="mini-light red" id="lightEast" title="East Signal"></span>
+              <span class="mini-light green" id="lightSouth" title="South Signal"></span>
+              <span class="mini-light red" id="lightWest" title="West Signal"></span>
+            </div>
+          </div>
+
+          <!-- North Approach Tag -->
+          <div class="approach-tag north">
+            <div>North Approach</div>
+            <div class="approach-count" id="diagNorthCount">800 vehicles</div>
+            <div class="approach-green-time" id="diagNorthGreen">Green: 45s</div>
+          </div>
+
+          <!-- South Approach Tag -->
+          <div class="approach-tag south">
+            <div>South Approach</div>
+            <div class="approach-count" id="diagSouthCount">650 vehicles</div>
+            <div class="approach-green-time" id="diagSouthGreen">Green: 35s</div>
+          </div>
+
+          <!-- East Approach Tag -->
+          <div class="approach-tag east">
+            <div>East Approach</div>
+            <div class="approach-count" id="diagEastCount">200 vehicles</div>
+            <div class="approach-green-time" id="diagEastGreen" style="color:#EF4444;">Green: 15s</div>
+          </div>
+
+          <!-- West Approach Tag -->
+          <div class="approach-tag west">
+            <div>West Approach</div>
+            <div class="approach-count" id="diagWestCount">150 vehicles</div>
+            <div class="approach-green-time" id="diagWestGreen" style="color:#EF4444;">Green: 15s</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; font-size: 13px; color: #6B7280;">
+          <strong>Intersection:</strong> Phase 7 Interchange &bull; <strong>Cycle Time:</strong> 110 seconds
+        </div>
+      </div>
+
+      <!-- Right: Real-time Green Time Allocation & Controls -->
+      <div class="signal-controls-card">
+        <h3>Adaptive Timing Allocation</h3>
+
+        <!-- North Row -->
+        <div class="approach-control-row">
+          <div class="appr-info">
+            <h4>North Direction (Heavy Demand)</h4>
+            <span id="txtNorthVehicles">800 vehicles &bull; Queue: 120m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderNorth" min="100" max="1200" value="800" oninput="recalculateSignalTimings()">
+            <span class="appr-badge green" id="badgeNorthGreen">45s Green</span>
+          </div>
+        </div>
+
+        <!-- South Row -->
+        <div class="approach-control-row">
+          <div class="appr-info">
+            <h4>South Direction (Moderate-High)</h4>
+            <span id="txtSouthVehicles">650 vehicles &bull; Queue: 85m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderSouth" min="100" max="1200" value="650" oninput="recalculateSignalTimings()">
+            <span class="appr-badge green" id="badgeSouthGreen">35s Green</span>
+          </div>
+        </div>
+
+        <!-- East Row -->
+        <div class="approach-control-row">
+          <div class="appr-info">
+            <h4>East Direction (Low-Moderate)</h4>
+            <span id="txtEastVehicles">200 vehicles &bull; Queue: 30m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderEast" min="50" max="800" value="200" oninput="recalculateSignalTimings()">
+            <span class="appr-badge red" id="badgeEastGreen">15s Green</span>
+          </div>
+        </div>
+
+        <!-- West Row -->
+        <div class="approach-control-row">
+          <div class="appr-info">
+            <h4>West Direction (Low Demand)</h4>
+            <span id="txtWestVehicles">150 vehicles &bull; Queue: 20m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderWest" min="50" max="800" value="150" oninput="recalculateSignalTimings()">
+            <span class="appr-badge red" id="badgeWestGreen">15s Green</span>
+          </div>
+        </div>
+
+        <!-- Signal Manual Overrides -->
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB;">
+          <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">Manual Signal Overrides:</h4>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-secondary" style="background:#EDE9FE; color:var(--purple); border:none; padding:8px 16px; font-size:13px;" onclick="forcePhase('north-south')">
+              Force Green N-S
+            </button>
+            <button class="btn-secondary" style="background:#EDE9FE; color:var(--purple); border:none; padding:8px 16px; font-size:13px;" onclick="forcePhase('east-west')">
+              Force Green E-W
+            </button>
+            <button class="btn-primary" style="padding:8px 16px; font-size:13px;" onclick="resetAdaptiveMode()">
+              Auto Adaptive Mode
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== SECTION 2: INCIDENT VERIFICATION QUEUE ===== -->
+    <div style="margin-top: 36px;" id="incidents-queue">
+      <div class="admin-card">
+        <h3>
+          <span><i class="fa-solid fa-list-check" style="color: var(--purple);"></i> Incident Verification & Dispatch Queue</span>
+          <span style="font-size: 13px; color: #6B7280; font-weight: normal;">Live Citizen Submissions</span>
+        </h3>
+
+        <div style="overflow-x: auto;">
+          <table class="algo-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Location</th>
+                <th>Severity</th>
+                <th>Reported At</th>
+                <th>Current Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tmIncidentTableBody">
+              <!-- Injected dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      checkEmergencyState();
+      renderIncidentQueue();
+      recalculateSignalTimings();
+    });
+
+    function checkEmergencyState() {
+      const em = window.UrbanFlowData.getActiveEmergency();
+      const banner = document.getElementById('tmEmergencyNotice');
+      if (em) {
+        banner.style.display = 'flex';
+      } else {
+        banner.style.display = 'none';
+      }
+    }
+
+    function resetEmergencyPreemption() {
+      window.UrbanFlowData.setEmergency(null);
+      const signals = window.UrbanFlowData.getSignals();
+      signals.emergencyPreemption = false;
+      signals.emergencyApproach = null;
+      window.UrbanFlowData.updateSignals(signals);
+      checkEmergencyState();
+      recalculateSignalTimings();
+      showToast('Override Released', 'Intersection restored to dynamic traffic queue mode.');
+    }
+
+    // Dynamic signal calculation logic matching PDF Figure 5
+    function recalculateSignalTimings() {
+      const n = parseInt(document.getElementById('sliderNorth').value);
+      const s = parseInt(document.getElementById('sliderSouth').value);
+      const e = parseInt(document.getElementById('sliderEast').value);
+      const w = parseInt(document.getElementById('sliderWest').value);
+
+      document.getElementById('diagNorthCount').textContent = `${n} vehicles`;
+      document.getElementById('diagSouthCount').textContent = `${s} vehicles`;
+      document.getElementById('diagEastCount').textContent = `${e} vehicles`;
+      document.getElementById('diagWestCount').textContent = `${w} vehicles`;
+
+      document.getElementById('txtNorthVehicles').textContent = `${n} vehicles • Queue: ${Math.round(n * 0.15)}m`;
+      document.getElementById('txtSouthVehicles').textContent = `${s} vehicles • Queue: ${Math.round(s * 0.13)}m`;
+      document.getElementById('txtEastVehicles').textContent = `${e} vehicles • Queue: ${Math.round(e * 0.15)}m`;
+      document.getElementById('txtWestVehicles').textContent = `${w} vehicles • Queue: ${Math.round(w * 0.13)}m`;
+
+      const total = n + s + e + w;
+      const cycle = 110; // total cycle in seconds
+
+      // Calculate proportional green allocations
+      const nGreen = Math.max(15, Math.round((n / total) * cycle));
+      const sGreen = Math.max(15, Math.round((s / total) * cycle));
+      const eGreen = Math.max(10, Math.round((e / total) * cycle));
+      const wGreen = Math.max(10, Math.round((w / total) * cycle));
+
+      document.getElementById('diagNorthGreen').textContent = `Green: ${nGreen}s`;
+      document.getElementById('diagSouthGreen').textContent = `Green: ${sGreen}s`;
+      document.getElementById('diagEastGreen').textContent = `Green: ${eGreen}s`;
+      document.getElementById('diagWestGreen').textContent = `Green: ${wGreen}s`;
+
+      document.getElementById('badgeNorthGreen').textContent = `${nGreen}s Green`;
+      document.getElementById('badgeSouthGreen').textContent = `${sGreen}s Green`;
+      document.getElementById('badgeEastGreen').textContent = `${eGreen}s Green`;
+      document.getElementById('badgeWestGreen').textContent = `${wGreen}s Green`;
+    }
+
+    function forcePhase(phase) {
+      if (phase === 'north-south') {
+        document.getElementById('lightNorth').className = 'mini-light green';
+        document.getElementById('lightSouth').className = 'mini-light green';
+        document.getElementById('lightEast').className = 'mini-light red';
+        document.getElementById('lightWest').className = 'mini-light red';
+        showToast('Manual Override Active', 'North-South approaches locked to Green.');
+      } else {
+        document.getElementById('lightNorth').className = 'mini-light red';
+        document.getElementById('lightSouth').className = 'mini-light red';
+        document.getElementById('lightEast').className = 'mini-light green';
+        document.getElementById('lightWest').className = 'mini-light green';
+        showToast('Manual Override Active', 'East-West approaches locked to Green.');
+      }
+    }
+
+    function resetAdaptiveMode() {
+      document.getElementById('lightNorth').className = 'mini-light green';
+      document.getElementById('lightSouth').className = 'mini-light green';
+      document.getElementById('lightEast').className = 'mini-light red';
+      document.getElementById('lightWest').className = 'mini-light red';
+      recalculateSignalTimings();
+      showToast('Adaptive Mode Restored', 'Signals are now optimizing dynamically based on vehicle count.');
+    }
+
+    function renderIncidentQueue() {
+      const tbody = document.getElementById('tmIncidentTableBody');
+      const incidents = window.UrbanFlowData.getIncidents();
+      tbody.innerHTML = '';
+
+      incidents.forEach(inc => {
+        const tr = document.createElement('tr');
+        const sevClass = inc.severity ? inc.severity.toLowerCase() : 'minor';
+        
+        tr.innerHTML = `
+          <td><strong>${inc.id}</strong></td>
+          <td>${escapeHtml(inc.type)}</td>
+          <td>${escapeHtml(inc.road)}</td>
+          <td><span class="severity-pill ${sevClass}">${inc.severity}</span></td>
+          <td>${inc.reportedAt}</td>
+          <td><strong style="color:${inc.status === 'Verified' ? '#059669' : '#D97706'}">${inc.status}</strong></td>
+          <td>
+            <button class="chip" onclick="verifyInc('${inc.id}')" style="background:#ECFDF5; color:#065F46; border:none; margin-right:4px;">
+              Verify
+            </button>
+            <button class="chip" onclick="resolveInc('${inc.id}')" style="background:#F3F4F6; color:#374151; border:none;">
+              Resolve
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function verifyInc(id) {
+      window.UrbanFlowData.updateIncidentStatus(id, 'Verified');
+      renderIncidentQueue();
+      showToast('Incident Verified', `${id} has been verified and broadcast to navigation algorithms.`);
+    }
+
+    function resolveInc(id) {
+      window.UrbanFlowData.updateIncidentStatus(id, 'Resolved');
+      renderIncidentQueue();
+      showToast('Incident Resolved', `${id} marked as cleared. Road segment traffic returned to normal.`);
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>

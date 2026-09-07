@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report an Accident / Incident | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role">Incident Reporting</span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> Feature Hub
+      </a>
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar">U</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="logout-btn" onclick="UrbanFlowData.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN INCIDENT REPORTING CONTAINER ===== -->
+  <main class="hub-main">
+    <div class="hub-welcome">
+      <div>
+        <h1>Report a Traffic Incident or Accident</h1>
+        <p>Your real-time report directly assists traffic operators and recalculates routes for thousands of drivers.</p>
+      </div>
+    </div>
+
+    <!-- Incident Form & Live Feed Grid -->
+    <div class="report-grid">
+      
+      <!-- Left: Submission Form -->
+      <div class="report-form-card">
+        <h3><i class="fa-solid fa-triangle-exclamation" style="color: #EF4444;"></i> New Incident Report</h3>
+
+        <form id="incidentForm">
+          <!-- Incident Type -->
+          <div class="input-group">
+            <label for="incType">Incident Category</label>
+            <select id="incType" required>
+              <option value="Accident" selected>💥 Vehicle Collision / Accident</option>
+              <option value="Roadwork">🚧 Roadwork / Construction</option>
+              <option value="Breakdown">🚗 Stalled Vehicle / Breakdown</option>
+              <option value="Signal Failure">🚦 Traffic Signal Malfunction</option>
+              <option value="Road Blockage">⛔ Road Blockage / Debris</option>
+            </select>
+          </div>
+
+          <!-- Location -->
+          <div class="input-group">
+            <label for="incRoad">Location / Road Name</label>
+            <input type="text" id="incRoad" placeholder="e.g. Phase 7 Chowk near flyover" required>
+          </div>
+
+          <!-- Severity -->
+          <div class="input-group">
+            <label for="incSeverity">Severity Level</label>
+            <select id="incSeverity" required>
+              <option value="Critical">🔴 Critical (Total Lane Blockage / Major Delay)</option>
+              <option value="Moderate" selected>🟡 Moderate (Partial Obstruction)</option>
+              <option value="Minor">🔵 Minor (Shoulder Lane / Minimal Delay)</option>
+            </select>
+          </div>
+
+          <!-- Description -->
+          <div class="input-group">
+            <label for="incDesc">Description & Details</label>
+            <textarea id="incDesc" rows="3" style="width:100%; padding:12px; border-radius:var(--radius-sm); border:1px solid #D1D5DB; background:#F3F4F6;" placeholder="Describe what happened, approximate delay, or assistance required..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn-find-route" style="margin-top: 10px; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
+            <i class="fa-solid fa-paper-plane"></i> SUBMIT INCIDENT REPORT
+          </button>
+        </form>
+      </div>
+
+      <!-- Right: Live Active Incidents Feed -->
+      <div class="incident-feed-card">
+        <h3>
+          <span><i class="fa-solid fa-bullhorn" style="color: var(--purple);"></i> Live Community Incidents</span>
+          <span id="incCountBadge" class="hub-card-badge" style="background:#FEE2E2; color:#DC2626;">4 Active</span>
+        </h3>
+
+        <div id="incidentsFeedList" style="max-height: 520px; overflow-y: auto; padding-right: 6px;">
+          <!-- Injected via JavaScript -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderIncidentFeed();
+
+      document.getElementById('incidentForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = document.getElementById('incType').value;
+        const road = document.getElementById('incRoad').value.trim();
+        const severity = document.getElementById('incSeverity').value;
+        const description = document.getElementById('incDesc').value.trim();
+
+        const currentUser = window.UrbanFlowData.getCurrentUser();
+        const newIncident = {
+          title: `${type} reported at ${road}`,
+          type,
+          severity,
+          road,
+          city: 'Patiala',
+          reportedBy: currentUser.displayName || 'Citizen Reporter',
+          description,
+          delayImpact: severity === 'Critical' ? '+15 min delay' : '+5 min delay'
+        };
+
+        window.UrbanFlowData.addIncident(newIncident);
+        showToast('Report Submitted!', 'Your incident report has been logged and sent to the traffic authority.');
+        
+        // Reset form
+        document.getElementById('incidentForm').reset();
+        renderIncidentFeed();
+      });
+    });
+
+    function renderIncidentFeed() {
+      const feedContainer = document.getElementById('incidentsFeedList');
+      const incidents = window.UrbanFlowData.getIncidents();
+      document.getElementById('incCountBadge').textContent = `${incidents.length} Active`;
+
+      feedContainer.innerHTML = '';
+      incidents.forEach(inc => {
+        const sevClass = inc.severity ? inc.severity.toLowerCase() : 'minor';
+        const item = document.createElement('div');
+        item.className = 'incident-item';
+        item.innerHTML = `
+          <div class="incident-item-header">
+            <span class="incident-item-title">${escapeHtml(inc.title || inc.type)}</span>
+            <span class="severity-pill ${sevClass}">${inc.severity || 'Minor'}</span>
+          </div>
+          <div class="incident-item-body">
+            <strong>📍 Location:</strong> ${escapeHtml(inc.road || 'City Road')}<br>
+            <strong>ℹ️ Info:</strong> ${escapeHtml(inc.description || 'No additional details provided.')}
+          </div>
+          <div class="incident-item-footer">
+            <span>⏱️ ${inc.reportedAt || 'Recent'} &bull; by ${escapeHtml(inc.reportedBy || 'User')}</span>
+            <span style="font-weight:600; color:${inc.status === 'Verified' ? '#059669' : '#D97706'};">
+              ● ${inc.status || 'Reported'}
+            </span>
+          </div>
+        `;
+        feedContainer.appendChild(item);
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>

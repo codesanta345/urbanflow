@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Route Options & Navigation | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role">Route Guidance</span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="journey.html" class="nav-btn-icon">
+        <i class="fa-solid fa-arrow-left"></i> Change Route
+      </a>
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> Feature Hub
+      </a>
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar">U</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="logout-btn" onclick="UrbanFlowData.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN ROUTE CONTAINER ===== -->
+  <main class="hub-main">
+    
+    <!-- Route Query Header -->
+    <div style="background: #141524; border-radius: var(--radius-md); padding: 18px 24px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <span style="font-size: 11px; font-weight: 700; color: #A78BFA; text-transform: uppercase; letter-spacing: 0.5px;">Active Journey Query</span>
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px; font-size: 16px; font-weight: 600; color: #fff;">
+          <span id="displayFrom">Thapar University Main Gate, Patiala</span>
+          <i class="fa-solid fa-arrow-right-long" style="color: var(--cyan-neon);"></i>
+          <span id="displayTo">Patiala Bus Stand, Near Railway Road</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 13px; color: var(--text-muted);">Mode:</span>
+        <span class="hub-card-badge" id="displayPref">Fastest Route</span>
+      </div>
+    </div>
+
+    <!-- ===== ROUTE GRID (Options + Interactive Map) ===== -->
+    <div class="route-grid">
+      
+      <!-- Left Column: Route Options & Navigation (PDF Figure 2) -->
+      <div class="route-options-panel">
+        <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Optimal Route Alternatives</h2>
+
+        <!-- Route A (Recommended) -->
+        <div class="route-option-card selected" id="cardRouteA" onclick="selectRoute('fastest')">
+          <span class="route-tag rec">Route A (Recommended)</span>
+          <div class="route-time-dist">
+            <h3>16 min</h3>
+            <span>7.2 km</span>
+          </div>
+          <div class="route-traffic-status">
+            <span class="traffic-dot moderate"></span>
+            <span>Moderate Traffic &bull; via Phase 7 Chowk & Bypass</span>
+          </div>
+        </div>
+
+        <!-- Route B -->
+        <div class="route-option-card" id="cardRouteB" onclick="selectRoute('shortest')">
+          <span class="route-tag alt">Route B (Shortest Distance)</span>
+          <div class="route-time-dist">
+            <h3>21 min</h3>
+            <span>6.4 km</span>
+          </div>
+          <div class="route-traffic-status">
+            <span class="traffic-dot heavy"></span>
+            <span>Heavy Traffic &bull; via City Market (Delay +5m)</span>
+          </div>
+        </div>
+
+        <!-- Route C -->
+        <div class="route-option-card" id="cardRouteC" onclick="selectRoute('avoidTolls')">
+          <span class="route-tag alt">Route C (Low Traffic & Toll Free)</span>
+          <div class="route-time-dist">
+            <h3>24 min</h3>
+            <span>9.1 km</span>
+          </div>
+          <div class="route-traffic-status">
+            <span class="traffic-dot low"></span>
+            <span>Low Traffic &bull; via Outer Link (Toll Free)</span>
+          </div>
+        </div>
+
+        <!-- Route Details & Turn-by-Turn Waypoints (PDF Figure 2 Screen 3) -->
+        <div class="route-summary-box">
+          <h4 id="routeSummaryTitle">Route Details &bull; 16 min (7.2 km)</h4>
+
+          <ul class="waypoint-list" id="waypointList">
+            <li class="waypoint-item">Thapar University Main Gate</li>
+            <li class="waypoint-item">Phase 7 Chowk (Signal Priority)</li>
+            <li class="waypoint-item">Bypass Road Exit 2</li>
+            <li class="waypoint-item dest">Patiala Bus Stand Arrival</li>
+          </ul>
+
+          <button class="btn-start-nav" id="btnStartNav" onclick="startNavigationSimulation()">
+            <i class="fa-solid fa-diamond-turn-right"></i> START NAVIGATION
+          </button>
+          
+          <div id="navStatusBanner" style="display: none; margin-top: 14px; background: rgba(16, 185, 129, 0.15); border: 1px solid #10B981; color: #34D399; padding: 12px; border-radius: var(--radius-sm); font-size: 13px; text-align: center; font-weight: 600;">
+            <i class="fa-solid fa-location-crosshairs"></i> Turn-by-turn guidance active. Next turn in 400m onto Phase 7 Chowk.
+          </div>
+        </div>
+
+        <!-- Dijkstra / A* Comparison Table (PDF Figure 6) -->
+        <div class="algo-card">
+          <h4><i class="fa-solid fa-diagram-project" style="color: var(--purple-vibrant);"></i> Algorithm Cost Matrix (Dijkstra / A*)</h4>
+          <table class="algo-table">
+            <thead>
+              <tr>
+                <th>Route</th>
+                <th>Distance</th>
+                <th>Est. Time</th>
+                <th>Traffic</th>
+                <th>Total Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="highlight">
+                <td>A &rarr; B &rarr; D &rarr; F</td>
+                <td>7.2 km</td>
+                <td>16 min</td>
+                <td>Moderate</td>
+                <td><strong>16 min &#9733;</strong></td>
+              </tr>
+              <tr>
+                <td>A &rarr; C &rarr; D &rarr; F</td>
+                <td>6.4 km</td>
+                <td>21 min</td>
+                <td>Heavy</td>
+                <td>21 min</td>
+              </tr>
+              <tr>
+                <td>A &rarr; C &rarr; E &rarr; F</td>
+                <td>9.1 km</td>
+                <td>24 min</td>
+                <td>Low</td>
+                <td>24 min</td>
+              </tr>
+            </tbody>
+          </table>
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
+            &#10003; <strong>Recommended Route:</strong> A &rarr; B &rarr; D &rarr; F utilizes traffic density weighting to minimize delay.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Interactive Leaflet Route Map -->
+      <div class="map-panel">
+        <div class="map-header">
+          <div class="map-title">
+            <i class="fa-solid fa-map-location" style="color: var(--cyan-neon);"></i>
+            <span id="mapRouteHeader">Dynamic Path Geometry &bull; Thapar Univ to Bus Stand</span>
+          </div>
+          <div class="map-status-pill">
+            AI Traffic-Aware Routing Active
+          </div>
+        </div>
+        <div id="routeMap"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    let routeMap = null;
+    let activePolyline = null;
+    let alternativePolylines = [];
+    let carMarker = null;
+    let animationInterval = null;
+    let currentKey = 'fastest';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const query = window.UrbanFlowData.getLastRouteQuery();
+
+      const fromText = urlParams.get('from') || query.from;
+      const toText = urlParams.get('to') || query.to;
+      const prefText = urlParams.get('pref') || query.pref;
+
+      document.getElementById('displayFrom').textContent = fromText;
+      document.getElementById('displayTo').textContent = toText;
+
+      let prefLabel = 'Fastest Route';
+      if (prefText === 'shortest') prefLabel = 'Shortest Distance';
+      else if (prefText === 'avoidTolls') prefLabel = 'Avoid Tolls / Low Traffic';
+      document.getElementById('displayPref').textContent = prefLabel;
+
+      const city = window.UrbanFlowData.getCityData('patiala');
+      routeMap = createLeafletMap('routeMap', city.lat, city.lon, 13);
+
+      selectRoute(prefText && window.UrbanFlowData.ROUTE_COMPARISONS[prefText] ? prefText : 'fastest');
+    });
+
+    function selectRoute(key) {
+      currentKey = key;
+      const data = window.UrbanFlowData.ROUTE_COMPARISONS[key] || window.UrbanFlowData.ROUTE_COMPARISONS.fastest;
+
+      document.getElementById('cardRouteA').classList.toggle('selected', key === 'fastest');
+      document.getElementById('cardRouteB').classList.toggle('selected', key === 'shortest');
+      document.getElementById('cardRouteC').classList.toggle('selected', key === 'avoidTolls');
+
+      document.getElementById('routeSummaryTitle').textContent = `Route Details • ${data.estTime} (${data.distance})`;
+      
+      const wpList = document.getElementById('waypointList');
+      wpList.innerHTML = '';
+      data.waypoints.forEach((wp, idx) => {
+        const li = document.createElement('li');
+        li.className = 'waypoint-item' + (idx === data.waypoints.length - 1 ? ' dest' : '');
+        li.textContent = wp;
+        wpList.appendChild(li);
+      });
+
+      if (routeMap) {
+        if (activePolyline) routeMap.removeLayer(activePolyline);
+        alternativePolylines.forEach(p => routeMap.removeLayer(p));
+        alternativePolylines = [];
+        if (carMarker) routeMap.removeLayer(carMarker);
+        if (animationInterval) clearInterval(animationInterval);
+        document.getElementById('navStatusBanner').style.display = 'none';
+
+        Object.keys(window.UrbanFlowData.ROUTE_COMPARISONS).forEach(k => {
+          if (k !== key) {
+            const alt = window.UrbanFlowData.ROUTE_COMPARISONS[k];
+            const altLine = L.polyline(alt.pathCoords, {
+              color: '#4B5563',
+              weight: 4,
+              opacity: 0.5,
+              dashArray: '5, 10'
+            }).addTo(routeMap);
+            alternativePolylines.push(altLine);
+          }
+        });
+
+        activePolyline = L.polyline(data.pathCoords, {
+          color: data.trafficColor || '#8B5CF6',
+          weight: 7,
+          opacity: 0.95
+        }).addTo(routeMap);
+
+        const startCoord = data.pathCoords[0];
+        const endCoord = data.pathCoords[data.pathCoords.length - 1];
+
+        L.marker(startCoord, {
+          icon: createCustomPin('#10B981', 'A')
+        }).addTo(routeMap).bindPopup(`<b>Origin:</b> ${data.waypoints[0]}`);
+
+        L.marker(endCoord, {
+          icon: createCustomPin('#EF4444', 'B')
+        }).addTo(routeMap).bindPopup(`<b>Destination:</b> ${data.waypoints[data.waypoints.length - 1]}`);
+
+        routeMap.fitBounds(activePolyline.getBounds(), { padding: [40, 40] });
+      }
+    }
+
+    function startNavigationSimulation() {
+      const data = window.UrbanFlowData.ROUTE_COMPARISONS[currentKey] || window.UrbanFlowData.ROUTE_COMPARISONS.fastest;
+      const coords = data.pathCoords;
+      if (!coords || coords.length < 2 || !routeMap) return;
+
+      document.getElementById('navStatusBanner').style.display = 'block';
+
+      if (carMarker) routeMap.removeLayer(carMarker);
+      if (animationInterval) clearInterval(animationInterval);
+
+      carMarker = L.marker(coords[0], {
+        icon: createCustomPin('#06B6D4', '🚗')
+      }).addTo(routeMap);
+
+      let step = 0;
+      const totalSteps = coords.length;
+
+      animationInterval = setInterval(() => {
+        step++;
+        if (step >= totalSteps) {
+          clearInterval(animationInterval);
+          document.getElementById('navStatusBanner').innerHTML = '<strong>🎉 Destination Reached!</strong> You have arrived at Patiala Bus Stand.';
+          return;
+        }
+        carMarker.setLatLng(coords[step]);
+        document.getElementById('navStatusBanner').innerHTML = `<i class="fa-solid fa-location-arrow"></i> Navigating: Approaching <strong>${data.waypoints[step] || 'Waypoint'}</strong>. ETA: ${Math.max(1, 16 - step * 3)} min.`;
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

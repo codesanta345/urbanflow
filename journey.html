@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plan Your Journey | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role">Journey Planner</span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> All Features
+      </a>
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar">U</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="logout-btn" onclick="UrbanFlowData.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN JOURNEY CONTAINER ===== -->
+  <main class="hub-main">
+    
+    <!-- Area Search Bar (Type any city to update map & zoom) -->
+    <div class="area-search-container" id="city-search">
+      <div class="area-search-header">
+        <span class="area-search-label">
+          <i class="fa-solid fa-location-dot" style="color: var(--purple-vibrant);"></i> Select Area:
+        </span>
+        <div class="search-input-box">
+          <i class="fa-solid fa-magnifying-glass search-icon-inside"></i>
+          <input type="text" id="citySearchInput" placeholder="Type city (e.g. Patiala, Chandigarh, Delhi, Mumbai)...">
+        </div>
+        <button class="btn-primary" id="btnSearchCity" style="padding: 10px 22px; font-size: 14px;">
+          Locate City
+        </button>
+      </div>
+
+      <!-- Quick Preset City Chips -->
+      <div class="city-chips-row" id="cityChipsContainer">
+        <span style="font-size: 12px; color: var(--text-muted); margin-right: 4px;">Popular Cities:</span>
+        <span class="chip active" data-city="patiala">Patiala</span>
+        <span class="chip" data-city="chandigarh">Chandigarh</span>
+        <span class="chip" data-city="delhi">New Delhi</span>
+        <span class="chip" data-city="ludhiana">Ludhiana</span>
+        <span class="chip" data-city="amritsar">Amritsar</span>
+        <span class="chip" data-city="mumbai">Mumbai</span>
+        <span class="chip" data-city="bangalore">Bangalore</span>
+      </div>
+    </div>
+
+    <!-- Traffic Overview Stat Row (Matching Reference) -->
+    <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 16px; color: #fff;">
+      Traffic Overview <span id="currentCityLabel" style="color: var(--cyan-neon); font-weight: 700;">— Patiala, Punjab</span>
+    </h2>
+
+    <section class="stat-row">
+      <div class="stat-card purple-theme">
+        <span class="stat-emoji">🟡</span>
+        <div>
+          <div class="stat-value" id="cityStatHigh">3</div>
+          <div class="stat-label">High traffic road<br>Moderate traffic</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-emoji">🚗</span>
+        <div>
+          <div class="stat-value" id="cityStatEta">18 min</div>
+          <div class="stat-label">Estimated average time</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-emoji">🎯</span>
+        <div>
+          <div class="stat-value" id="cityStatAccuracy">87%</div>
+          <div class="stat-label">ML Prediction accuracy</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-emoji">⚠️</span>
+        <div>
+          <div class="stat-value" id="cityStatReports">4</div>
+          <div class="stat-label">Total reports<br>Incidents active</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== JOURNEY PLANNER & MAP GRID ===== -->
+    <div class="journey-grid">
+      <!-- Left Card: Plan Your Journey with Smart Autocomplete -->
+      <div class="planner-card">
+        <h3>
+          <i class="fa-solid fa-route" style="color: var(--purple-vibrant);"></i> Plan your journey
+        </h3>
+
+        <form id="journeyForm" autocomplete="off">
+          
+          <!-- FROM location with Instant Autocomplete Dropdown -->
+          <div class="input-group">
+            <label for="fromInput"><i class="fa-solid fa-location-arrow" style="color: #10B981;"></i> FROM 📍</label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="fromInput" value="Thapar University Main Gate, Patiala" placeholder="Type starting point (e.g. Thapar, Bus Stand)..." required>
+              <div class="suggestions-dropdown" id="fromSuggestions"></div>
+            </div>
+          </div>
+
+          <!-- Swap button -->
+          <div class="swap-btn-wrap">
+            <button type="button" class="btn-swap" id="btnSwapLocations" title="Swap From and To">
+              <i class="fa-solid fa-arrows-up-down"></i>
+            </button>
+          </div>
+
+          <!-- TO location with Instant Autocomplete Dropdown -->
+          <div class="input-group">
+            <label for="toInput"><i class="fa-solid fa-location-dot" style="color: #EF4444;"></i> TO 📍</label>
+            <div class="autocomplete-wrapper">
+              <input type="text" id="toInput" value="Patiala Bus Stand, Near Railway Road" placeholder="Type destination address (e.g. Bus Stand, Phase 7)..." required>
+              <div class="suggestions-dropdown" id="toSuggestions"></div>
+            </div>
+          </div>
+
+          <!-- Travel Preferences -->
+          <div class="preference-section">
+            <label><i class="fa-solid fa-sliders"></i> Travel Preference:</label>
+            
+            <div class="input-group" style="margin-bottom: 12px;">
+              <select id="prefSelect">
+                <option value="fastest" selected>⚡ Fastest Route (Traffic-Aware)</option>
+                <option value="shortest">📏 Shortest Distance (Dijkstra Min Km)</option>
+                <option value="avoidTolls">💵 Avoid Tolls / Low Congestion</option>
+                <option value="avoidHighTraffic">🛡️ Avoid High Traffic Corridors</option>
+              </select>
+            </div>
+
+            <div class="pref-options">
+              <button type="button" class="pref-btn active" data-pref="fastest">
+                <i class="fa-solid fa-bolt"></i> Fastest
+              </button>
+              <button type="button" class="pref-btn" data-pref="shortest">
+                <i class="fa-solid fa-ruler-combined"></i> Shortest
+              </button>
+              <button type="button" class="pref-btn" data-pref="avoidTolls">
+                <i class="fa-solid fa-shield-halved"></i> Avoid Tolls
+              </button>
+              <button type="button" class="pref-btn" data-pref="avoidHighTraffic">
+                <i class="fa-solid fa-car-side"></i> Least Traffic
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-find-route" id="findRouteBtn">
+            FIND ROUTE <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Right Card: Live Interactive Leaflet Map with Zoom In/Out -->
+      <div class="map-panel">
+        <div class="map-header">
+          <div class="map-title">
+            <i class="fa-solid fa-map" style="color: var(--purple-vibrant);"></i>
+            <span id="mapHeaderTitle">Live Map View &bull; Patiala, Punjab</span>
+          </div>
+          <div class="map-status-pill">
+            Interactive OpenStreetMap Engine (Zoom In / Out)
+          </div>
+        </div>
+
+        <div id="leafletMap"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    let mapInstance = null;
+    let cityMarker = null;
+    let currentCityKey = 'patiala';
+    let selectedPreference = 'fastest';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Initialize Map
+      const defaultData = window.UrbanFlowData.getCityData('patiala');
+      mapInstance = createLeafletMap('leafletMap', defaultData.lat, defaultData.lon, defaultData.zoom);
+
+      if (mapInstance) {
+        cityMarker = L.marker([defaultData.lat, defaultData.lon], {
+          icon: createCustomPin('#8B5CF6', '📍')
+        }).addTo(mapInstance);
+        cityMarker.bindPopup(`<b>${defaultData.fullName}</b><br>Live Traffic Monitoring Active`).openPopup();
+      }
+
+      // 2. Setup City Chips
+      const chips = document.querySelectorAll('.chip');
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          chips.forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const city = chip.getAttribute('data-city');
+          selectCity(city);
+        });
+      });
+
+      // 3. Setup City Search Input
+      const searchBtn = document.getElementById('btnSearchCity');
+      const searchInput = document.getElementById('citySearchInput');
+
+      searchBtn.addEventListener('click', () => {
+        handleCitySearch(searchInput.value);
+      });
+
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          handleCitySearch(searchInput.value);
+        }
+      });
+
+      // 4. Setup Smart Autocomplete for FROM and TO Inputs
+      setupAutocomplete('fromInput', 'fromSuggestions');
+      setupAutocomplete('toInput', 'toSuggestions');
+
+      // 5. Swap button
+      document.getElementById('btnSwapLocations').addEventListener('click', () => {
+        const fromEl = document.getElementById('fromInput');
+        const toEl = document.getElementById('toInput');
+        const temp = fromEl.value;
+        fromEl.value = toEl.value;
+        toEl.value = temp;
+      });
+
+      // 6. Preferences Sync
+      const prefSelect = document.getElementById('prefSelect');
+      const prefBtns = document.querySelectorAll('.pref-btn');
+
+      prefBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          prefBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          selectedPreference = btn.getAttribute('data-pref');
+          prefSelect.value = selectedPreference;
+        });
+      });
+
+      prefSelect.addEventListener('change', () => {
+        selectedPreference = prefSelect.value;
+        prefBtns.forEach(b => {
+          if (b.getAttribute('data-pref') === selectedPreference) {
+            b.classList.add('active');
+          } else {
+            b.classList.remove('active');
+          }
+        });
+      });
+
+      // 7. Journey Submission
+      document.getElementById('journeyForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fromVal = document.getElementById('fromInput').value.trim();
+        const toVal = document.getElementById('toInput').value.trim();
+
+        if (!fromVal || !toVal) {
+          alert('Please enter both FROM and TO locations.');
+          return;
+        }
+
+        window.UrbanFlowData.saveRouteQuery(fromVal, toVal, selectedPreference);
+        window.location.href = `route-details.html?from=${encodeURIComponent(fromVal)}&to=${encodeURIComponent(toVal)}&pref=${encodeURIComponent(selectedPreference)}`;
+      });
+    });
+
+    // Smart Autocomplete Logic
+    function setupAutocomplete(inputId, dropdownId) {
+      const input = document.getElementById(inputId);
+      const dropdown = document.getElementById(dropdownId);
+
+      function updateSuggestions(query) {
+        const results = window.UrbanFlowData.searchLandmarks(query, currentCityKey);
+
+        // If local results are empty, try search across all cities
+        let finalResults = results;
+        if (finalResults.length === 0 && query.length >= 2) {
+          finalResults = window.UrbanFlowData.searchLandmarks(query, null);
+        }
+
+        if (finalResults.length === 0) {
+          dropdown.classList.remove('open');
+          dropdown.innerHTML = '';
+          return;
+        }
+
+        dropdown.innerHTML = '';
+        finalResults.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'suggestion-item';
+          div.innerHTML = `
+            <div class="sugg-left">
+              <span class="sugg-icon">${item.icon}</span>
+              <span class="sugg-text">${highlightMatch(item.name, query)}</span>
+            </div>
+            <span class="sugg-badge">${item.category}</span>
+          `;
+          div.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            input.value = item.name;
+            dropdown.classList.remove('open');
+            dropdown.innerHTML = '';
+          });
+          dropdown.appendChild(div);
+        });
+
+        dropdown.classList.add('open');
+      }
+
+      input.addEventListener('input', () => {
+        const val = input.value.trim();
+        if (val.length >= 1) {
+          updateSuggestions(val);
+        } else {
+          dropdown.classList.remove('open');
+          dropdown.innerHTML = '';
+        }
+      });
+
+      input.addEventListener('focus', () => {
+        const val = input.value.trim();
+        if (val.length >= 1) {
+          updateSuggestions(val);
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        setTimeout(() => {
+          dropdown.classList.remove('open');
+        }, 200);
+      });
+    }
+
+    function highlightMatch(text, query) {
+      if (!query) return text;
+      const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<strong style="color: #A78BFA;">$1</strong>');
+    }
+
+    function selectCity(cityKey) {
+      currentCityKey = cityKey;
+      const data = window.UrbanFlowData.getCityData(cityKey);
+      if (!data) return;
+
+      window.UrbanFlowData.setSelectedCityKey(cityKey);
+      applyCityData(data);
+    }
+
+    function handleCitySearch(query) {
+      if (!query.trim()) return;
+      geocodeCity(
+        query,
+        (cityData) => {
+          applyCityData(cityData);
+        },
+        (errMsg) => {
+          alert(errMsg);
+        }
+      );
+    }
+
+    function applyCityData(data) {
+      document.getElementById('currentCityLabel').textContent = `— ${data.fullName || data.name}`;
+      document.getElementById('mapHeaderTitle').textContent = `Live Map View • ${data.fullName || data.name}`;
+
+      document.getElementById('cityStatHigh').textContent = data.highTrafficRoads || 4;
+      document.getElementById('cityStatEta').textContent = data.avgEta || '22 min';
+      document.getElementById('cityStatAccuracy').textContent = (data.mlAccuracy || 87) + '%';
+      document.getElementById('cityStatReports').textContent = data.incidentReports || 5;
+
+      if (data.fromDefault) document.getElementById('fromInput').value = data.fromDefault;
+      if (data.toDefault) document.getElementById('toInput').value = data.toDefault;
+
+      if (mapInstance) {
+        mapInstance.setView([data.lat, data.lon], data.zoom || 13);
+        if (cityMarker) {
+          cityMarker.setLatLng([data.lat, data.lon]);
+          cityMarker.bindPopup(`<b>${data.fullName || data.name}</b><br>Live Congestion Monitored`).openPopup();
+        }
+        setTimeout(() => mapInstance.invalidateSize(), 200);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard & Feature Hub | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP DASHBOARD NAVBAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role" id="navUserRole">Commuter</span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <!-- Quick Role Switcher for instant evaluation -->
+      <div class="role-switch-wrap">
+        <span style="color: var(--text-muted);"><i class="fa-solid fa-users"></i> Role:</span>
+        <select id="roleSwitcherSelect" onchange="handleRoleSwitch(this.value)">
+          <option value="user">👤 User (Commuter)</option>
+          <option value="traffic_manager">🚦 Traffic Manager</option>
+          <option value="admin">⚙️ System Admin</option>
+        </select>
+      </div>
+
+      <a href="journey.html" class="nav-btn-icon">
+        <i class="fa-solid fa-map-location-dot"></i> Live Map
+      </a>
+      
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar">U</div>
+        <span id="navUserName">User</span>
+      </div>
+
+      <button class="logout-btn" onclick="UrbanFlowData.logout()" title="Log out">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN FEATURE HUB ===== -->
+  <main class="hub-main">
+    <div class="hub-welcome">
+      <div>
+        <h1 id="welcomeGreeting">Traffic Control & Mobility Hub</h1>
+        <p id="welcomeSubtext">Welcome! Here are the features available for your role.</p>
+      </div>
+      <div>
+        <span class="hub-card-badge" id="roleTagDisplay" style="font-size: 13px; padding: 6px 16px;">
+          Commuter Mode
+        </span>
+      </div>
+    </div>
+
+    <!-- Quick Stats Overview Bar -->
+    <section class="stat-row">
+      <div class="stat-card purple-theme">
+        <span class="stat-emoji">🟡</span>
+        <div>
+          <div class="stat-value" id="hubStatHigh">3 Roads</div>
+          <div class="stat-label">Moderate - High Traffic</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-emoji">🚗</span>
+        <div>
+          <div class="stat-value" id="hubStatEta">18 min</div>
+          <div class="stat-label">Average City ETA</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-emoji">🎯</span>
+        <div>
+          <div class="stat-value">87%</div>
+          <div class="stat-label">ML Prediction Accuracy</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-emoji">⚠️</span>
+        <div>
+          <div class="stat-value" id="hubStatIncidents">4 Active</div>
+          <div class="stat-label">Incident Reports Tracked</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== ROLE-SPECIFIC FEATURES SECTION ===== -->
+    <div class="hub-grid-title">
+      <span id="featuresGridHeading">Your Available Features</span>
+      <span style="font-size: 13px; color: var(--text-muted); font-weight: normal;" id="roleDescriptionTag">
+        Filtered strictly by active user permissions
+      </span>
+    </div>
+    
+    <!-- Dynamic Cards Container (Rendered by User Role) -->
+    <div class="hub-cards-grid" id="roleFeaturesContainer">
+      <!-- Injected via JavaScript based on role -->
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Role-specific distinct features catalog
+    const ROLE_FEATURES = {
+      // 1. COMMUTER / DRIVER FEATURES (USER ONLY)
+      'user': [
+        {
+          icon: '🗺️',
+          badge: 'Navigation',
+          badgeClass: '',
+          title: 'Plan Your Journey',
+          desc: 'Input source and destination to compute optimal routes (Fastest, Shortest, Avoid Tolls) with live traffic maps and turn-by-turn guidance.',
+          actionText: 'Plan Route Now',
+          link: 'journey.html'
+        },
+        {
+          icon: '🚨',
+          badge: 'Citizen Alert',
+          badgeClass: '',
+          title: 'Report an Accident / Hazard',
+          desc: 'Report traffic collisions, potholes, road construction, vehicle breakdowns, or signal issues to alert authorities and other drivers.',
+          actionText: 'Report Incident',
+          link: 'report-incident.html'
+        },
+        {
+          icon: '🚑',
+          badge: 'Emergency SOS',
+          badgeClass: '',
+          title: 'Call Emergency Assistance',
+          desc: 'Request an urgent ambulance, fire engine, or police escort with automatic location transmission and route clearance.',
+          actionText: 'Request Emergency SOS',
+          link: 'emergency.html'
+        },
+        {
+          icon: '📡',
+          badge: 'Live Map Explorer',
+          badgeClass: '',
+          title: 'Live City Traffic Map',
+          desc: 'Explore city-wide real-time traffic conditions, search any area, zoom in/out, and check live congestion levels across streets.',
+          actionText: 'Open Live Map',
+          link: 'journey.html#city-search'
+        }
+      ],
+
+      // 2. TRAFFIC AUTHORITY / MANAGER FEATURES (TRAFFIC MANAGER ONLY)
+      'traffic_manager': [
+        {
+          icon: '🚦',
+          badge: 'Traffic Authority',
+          badgeClass: 'authority',
+          title: 'Smart Traffic Signal Control',
+          desc: 'Adjust signal timings dynamically across 4 approaches (North 800, East 200, South 650, West 150) to eliminate queue backups in real time.',
+          actionText: 'Open Signal Controller',
+          link: 'traffic-manager.html'
+        },
+        {
+          icon: '📋',
+          badge: 'Operations Desk',
+          badgeClass: 'authority',
+          title: 'Incident Verification Center',
+          desc: 'Review citizen incident submissions, verify severity, deploy road recovery units, and broadcast updates to navigation algorithms.',
+          actionText: 'Review Incidents Queue',
+          link: 'traffic-manager.html#incidents-queue'
+        },
+        {
+          icon: '🌊',
+          badge: 'Corridor Preemption',
+          badgeClass: 'authority',
+          title: 'Green Wave Emergency Control',
+          desc: 'Monitor active emergency vehicles along urban corridors, override signal cycles to green, and coordinate hospital transit paths.',
+          actionText: 'Manage Emergency Priority',
+          link: 'emergency.html'
+        },
+        {
+          icon: '📈',
+          badge: 'Sensor Telemetry',
+          badgeClass: 'authority',
+          title: 'Live Sensor & Congestion Monitor',
+          desc: 'Inspect real-time telemetry from 142 road sensors, approach velocities, congestion heatmaps, and signal phase durations.',
+          actionText: 'View Network Telemetry',
+          link: 'journey.html'
+        }
+      ],
+
+      // 3. SYSTEM ADMINISTRATOR FEATURES (ADMIN ONLY)
+      'admin': [
+        {
+          icon: '⚙️',
+          badge: 'Admin Command',
+          badgeClass: 'admin',
+          title: 'Central Infrastructure Control',
+          desc: 'Master dashboard oversight matching PDF Figure 7: 142 active roads, 18 high congestion segments, 7 incidents, and emergency vehicles.',
+          actionText: 'Launch Admin Console',
+          link: 'admin.html'
+        },
+        {
+          icon: '🧠',
+          badge: 'AI / ML Engine',
+          badgeClass: 'admin',
+          title: 'ML Prediction & Retraining Engine',
+          desc: 'Monitor ML model accuracy (87%), evaluate congestion forecast metrics (Road A, B, C, D), and tune tree weights.',
+          actionText: 'Inspect ML Models',
+          link: 'admin.html'
+        },
+        {
+          icon: '👥',
+          badge: 'Security / RBAC',
+          badgeClass: 'admin',
+          title: 'User Access & Privilege Matrix',
+          desc: 'Manage authenticated commuters, traffic operators, and system administrators with stateless token validation rules.',
+          actionText: 'Manage Access Roles',
+          link: 'admin.html'
+        },
+        {
+          icon: '🚦',
+          badge: 'Signal Override',
+          badgeClass: 'admin',
+          title: 'Citywide Signal Override Command',
+          desc: 'Direct supervisory access to modify intersection cycle times, trigger citywide emergency flash, and audit traffic records.',
+          actionText: 'Open Signal Controller',
+          link: 'traffic-manager.html'
+        }
+      ]
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderDashboardForRole();
+    });
+
+    function renderDashboardForRole() {
+      const user = window.UrbanFlowData.getCurrentUser();
+      const role = (user && user.role) ? user.role : 'user';
+
+      // Update Top Nav
+      document.getElementById('roleSwitcherSelect').value = role;
+      const userName = user.displayName || user.username || 'User';
+      document.getElementById('navUserName').textContent = userName.split(' ')[0];
+      document.getElementById('navUserAvatar').textContent = userName.charAt(0).toUpperCase();
+
+      const rolePill = document.getElementById('navUserRole');
+      const roleTag = document.getElementById('roleTagDisplay');
+      const greeting = document.getElementById('welcomeGreeting');
+      const subtext = document.getElementById('welcomeSubtext');
+
+      rolePill.className = 'nav-pill-role ' + (role === 'admin' ? 'admin' : (role === 'traffic_manager' ? 'authority' : ''));
+
+      if (role === 'traffic_manager') {
+        rolePill.textContent = 'Traffic Authority';
+        roleTag.textContent = 'Traffic Authority Mode';
+        roleTag.className = 'hub-card-badge authority';
+        greeting.textContent = `Welcome, Officer ${userName}!`;
+        subtext.textContent = 'Traffic signal management and incident verification console.';
+      } else if (role === 'admin') {
+        rolePill.textContent = 'System Admin';
+        roleTag.textContent = 'Administrator Root Mode';
+        roleTag.className = 'hub-card-badge admin';
+        greeting.textContent = `Welcome, Admin ${userName}!`;
+        subtext.textContent = 'Full infrastructure control, ML prediction pipelines, and user administration.';
+      } else {
+        rolePill.textContent = 'Commuter';
+        roleTag.textContent = 'Commuter / Driver Mode';
+        roleTag.className = 'hub-card-badge';
+        greeting.textContent = `Welcome back, ${userName}!`;
+        subtext.textContent = 'Plan journeys, report incidents, and check live traffic conditions.';
+      }
+
+      // Sync active incidents count
+      const incidents = window.UrbanFlowData.getIncidents();
+      document.getElementById('hubStatIncidents').textContent = `${incidents.length} Active`;
+
+      // Render ONLY role-specific cards!
+      const container = document.getElementById('roleFeaturesContainer');
+      container.innerHTML = '';
+
+      const features = ROLE_FEATURES[role] || ROLE_FEATURES['user'];
+      features.forEach(f => {
+        const a = document.createElement('a');
+        a.href = f.link;
+        a.className = 'hub-card';
+        a.innerHTML = `
+          <div>
+            <div class="hub-card-header">
+              <div class="hub-card-icon">${f.icon}</div>
+              <span class="hub-card-badge ${f.badgeClass}">${f.badge}</span>
+            </div>
+            <h3>${f.title}</h3>
+            <p>${f.desc}</p>
+          </div>
+          <div class="hub-card-action">
+            <span>${f.actionText}</span>
+            <span><i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        `;
+        container.appendChild(a);
+      });
+    }
+
+    // Role switcher dropdown handler
+    function handleRoleSwitch(newRole) {
+      const switchedUser = window.UrbanFlowData.switchRole(newRole);
+      if (switchedUser) {
+        showToast('Role Switched!', `Now viewing dashboard as ${switchedUser.roleTitle}`);
+        renderDashboardForRole();
+      }
+    }
+  </script>
+</body>
+</html>

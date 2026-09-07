@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergency Priority Dispatch | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role" style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5);">
+      Emergency Response Priority
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> Feature Hub
+      </a>
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar">U</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="logout-btn" onclick="UrbanFlowData.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN EMERGENCY CONTAINER ===== -->
+  <main class="hub-main">
+    
+    <!-- Header with siren badge -->
+    <div class="emergency-header">
+      <div>
+        <h1 style="font-size: 26px; font-weight: 700; color: #111827;">
+          <i class="fa-solid fa-truck-medical" style="color: #EF4444;"></i> Call & Dispatch Emergency Vehicle
+        </h1>
+        <p style="color: #6B7280; font-size: 14px;">
+          Activating an emergency vehicle establishes a prioritized green-wave corridor, preempting regular traffic light cycles.
+        </p>
+      </div>
+      <span class="siren-badge" id="sirenBadge" style="display: none;">
+        <i class="fa-solid fa-lightbulb"></i> PRIORITY CORRIDOR ACTIVE
+      </span>
+    </div>
+
+    <!-- Active Green Wave Banner (appears on trigger) -->
+    <div class="green-wave-banner" id="greenWaveBanner" style="display: none;">
+      <div>
+        <h4><i class="fa-solid fa-wave-square"></i> Green Wave Signal Preemption Active</h4>
+        <p>Intersections on corridor (Phase 7 Chowk & Bypass Interchanges) have been switched to GREEN for emergency vehicle passage.</p>
+      </div>
+      <button class="logout-btn" onclick="terminateEmergency()" style="background: #fff; color: #DC2626; border: none; font-weight: 700;">
+        Deactivate Priority
+      </button>
+    </div>
+
+    <!-- Emergency Controls & Map Grid -->
+    <div class="journey-grid">
+      
+      <!-- Left: Vehicle Selection & Dispatch Form -->
+      <div class="emergency-card">
+        <h3>1. Select Emergency Vehicle Type</h3>
+        
+        <div class="vehicle-selector">
+          <div class="veh-card selected" id="vehAmbulance" onclick="selectEmergencyVeh('ambulance')">
+            <div class="veh-icon">🚑</div>
+            <h4>Ambulance</h4>
+            <p>Code 1 Medical Priority</p>
+          </div>
+
+          <div class="veh-card" id="vehFire" onclick="selectEmergencyVeh('fire')">
+            <div class="veh-icon">🚒</div>
+            <h4>Fire Truck</h4>
+            <p>Fire Rescue Dispatch</p>
+          </div>
+
+          <div class="veh-card" id="vehPolice" onclick="selectEmergencyVeh('police')">
+            <div class="veh-icon">🚓</div>
+            <h4>Police Cruiser</h4>
+            <p>High Priority Interceptor</p>
+          </div>
+        </div>
+
+        <h3>2. Emergency Corridor Path</h3>
+        
+        <div class="input-group">
+          <label><i class="fa-solid fa-hospital" style="color: #EF4444;"></i> Dispatch Origin</label>
+          <input type="text" id="emOrigin" value="Rajindra Hospital, Patiala" readonly style="background:#E5E7EB;">
+        </div>
+
+        <div class="input-group">
+          <label><i class="fa-solid fa-triangle-exclamation" style="color: #F59E0B;"></i> Destination / Incident Site</label>
+          <input type="text" id="emDestination" value="Phase 7 Industrial Area, Patiala" placeholder="Emergency destination address">
+        </div>
+
+        <button type="button" class="btn-find-route" id="btnDispatchEmergency" onclick="dispatchEmergencyVehicle()" style="margin-top: 16px; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
+          <i class="fa-solid fa-bullhorn"></i> DISPATCH & ACTIVATE GREEN WAVE
+        </button>
+
+        <div style="margin-top: 24px; padding: 16px; background: #FEF2F2; border-radius: var(--radius-sm); border: 1px solid #FECACA; font-size: 13px; color: #991B1B;">
+          <strong><i class="fa-solid fa-shield-halved"></i> Preemption Protocol:</strong><br>
+          Connected roadside traffic controllers will extend green phase durations up to 60 seconds and hold cross-street traffic on red until the unit clears the junction.
+        </div>
+      </div>
+
+      <!-- Right: Interactive Priority Route Map -->
+      <div class="map-panel">
+        <div class="map-header">
+          <div class="map-title">
+            <i class="fa-solid fa-map-location-dot" style="color: #EF4444;"></i>
+            <span id="emMapTitle">Emergency Corridor Overview &bull; Rajindra Hospital</span>
+          </div>
+          <div class="map-status-pill" id="emStatusText" style="color: #6B7280;">
+            Standby Mode
+          </div>
+        </div>
+        <div id="emergencyMap" style="height: 540px;"></div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    let emMap = null;
+    let emPolyline = null;
+    let emVehicleMarker = null;
+    let emInterval = null;
+    let selectedVehType = 'ambulance';
+
+    const EM_PATH = [
+      [30.3340, 76.3820], // Rajindra Hospital
+      [30.3380, 76.3860],
+      [30.3420, 76.3810], // Phase 7 Chowk
+      [30.3470, 76.3750],
+      [30.3544, 76.3688]  // Target site
+    ];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize map at Rajindra Hospital
+      emMap = createLeafletMap('emergencyMap', 30.3340, 76.3820, 14);
+
+      // Add Hospital Marker
+      L.marker([30.3340, 76.3820], {
+        icon: createCustomPin('#EF4444', '🏥')
+      }).addTo(emMap).bindPopup('<b>Rajindra Hospital</b><br>Emergency Response Base').openPopup();
+
+      // Add Target Site Marker
+      L.marker([30.3544, 76.3688], {
+        icon: createCustomPin('#F59E0B', '🚨')
+      }).addTo(emMap).bindPopup('<b>Emergency Scene</b><br>Phase 7 Priority Destination');
+    });
+
+    function selectEmergencyVeh(type) {
+      selectedVehType = type;
+      document.getElementById('vehAmbulance').classList.toggle('selected', type === 'ambulance');
+      document.getElementById('vehFire').classList.toggle('selected', type === 'fire');
+      document.getElementById('vehPolice').classList.toggle('selected', type === 'police');
+    }
+
+    function dispatchEmergencyVehicle() {
+      const banner = document.getElementById('greenWaveBanner');
+      const badge = document.getElementById('sirenBadge');
+      const statusText = document.getElementById('emStatusText');
+
+      banner.style.display = 'flex';
+      badge.style.display = 'inline-block';
+      statusText.innerHTML = '<span style="color:#EF4444; font-weight:700;">● GREEN WAVE ACTIVE</span>';
+
+      showToast('Emergency Unit Dispatched!', 'Traffic signals along the corridor have been overridden to GREEN.', 5000);
+
+      // Save active emergency in shared store so Traffic Manager & Admin dashboards reflect it!
+      window.UrbanFlowData.setEmergency({
+        vehicle: selectedVehType,
+        dispatchedAt: new Date().toLocaleTimeString(),
+        route: 'Rajindra Hospital -> Phase 7 Chowk -> Destination',
+        preemptedIntersections: ['Phase 7 Chowk', 'Bypass South']
+      });
+
+      // Update Signals in storage to North-South Green
+      const signals = window.UrbanFlowData.getSignals();
+      signals.emergencyPreemption = true;
+      signals.emergencyApproach = 'South';
+      window.UrbanFlowData.updateSignals(signals);
+
+      // Draw corridor polyline on map
+      if (emPolyline) emMap.removeLayer(emPolyline);
+      emPolyline = L.polyline(EM_PATH, {
+        color: '#EF4444',
+        weight: 8,
+        opacity: 0.95
+      }).addTo(emMap);
+
+      emMap.fitBounds(emPolyline.getBounds(), { padding: [40, 40] });
+
+      // Animate emergency vehicle marker
+      let emoji = '🚑';
+      if (selectedVehType === 'fire') emoji = '🚒';
+      if (selectedVehType === 'police') emoji = '🚓';
+
+      if (emVehicleMarker) emMap.removeLayer(emVehicleMarker);
+      if (emInterval) clearInterval(emInterval);
+
+      emVehicleMarker = L.marker(EM_PATH[0], {
+        icon: createCustomPin('#EF4444', emoji)
+      }).addTo(emMap);
+
+      let step = 0;
+      emInterval = setInterval(() => {
+        step++;
+        if (step >= EM_PATH.length) {
+          clearInterval(emInterval);
+          statusText.textContent = 'Vehicle Arrived on Scene';
+          showToast('Arrived on Scene', 'Emergency unit reached destination. Corridor returned to standard cycle.');
+          return;
+        }
+        emVehicleMarker.setLatLng(EM_PATH[step]);
+      }, 2500);
+    }
+
+    function terminateEmergency() {
+      document.getElementById('greenWaveBanner').style.display = 'none';
+      document.getElementById('sirenBadge').style.display = 'none';
+      document.getElementById('emStatusText').textContent = 'Standby Mode';
+
+      window.UrbanFlowData.setEmergency(null);
+      const signals = window.UrbanFlowData.getSignals();
+      signals.emergencyPreemption = false;
+      signals.emergencyApproach = null;
+      window.UrbanFlowData.updateSignals(signals);
+
+      if (emInterval) clearInterval(emInterval);
+      if (emVehicleMarker) emMap.removeLayer(emVehicleMarker);
+      if (emPolyline) emMap.removeLayer(emPolyline);
+
+      showToast('Emergency Ended', 'Traffic signal preemption restored to standard adaptive cycles.');
+    }
+  </script>
+</body>
+</html>

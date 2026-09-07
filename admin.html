@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role" style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5);">
+      System Admin Console
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> Feature Hub
+      </a>
+      <a href="traffic-manager.html" class="nav-btn-icon">
+        <i class="fa-solid fa-traffic-light"></i> Signal Ops
+      </a>
+      <div class="user-badge">
+        <div class="avatar-circle" id="navUserAvatar" style="background:#EF4444;">U</div>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="logout-btn" onclick="UrbanFlowData.logout()">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN ADMIN DASHBOARD CONTAINER (PDF Figure 7) ===== -->
+  <main class="hub-main">
+    <div class="hub-welcome">
+      <div>
+        <h1>Central Administrator Control Center</h1>
+        <p>Comprehensive system oversight matching Software Engineering Project Report (Figure 7).</p>
+      </div>
+    </div>
+
+    <!-- ===== TOP 4 KPI CARDS (PDF Figure 7) ===== -->
+    <section class="stat-row">
+      <!-- Active Roads: 142 -->
+      <div class="stat-card">
+        <span class="stat-emoji">🛣️</span>
+        <div>
+          <div class="stat-value">142</div>
+          <div class="stat-label">Active Roads Monitored</div>
+        </div>
+      </div>
+
+      <!-- High Congestion: 18 -->
+      <div class="stat-card purple-theme">
+        <span class="stat-emoji">🔴</span>
+        <div>
+          <div class="stat-value">18</div>
+          <div class="stat-label">High Congestion Segments</div>
+        </div>
+      </div>
+
+      <!-- Incidents: 7 -->
+      <div class="stat-card">
+        <span class="stat-emoji">⚠️</span>
+        <div>
+          <div class="stat-value" id="adminIncCount">7</div>
+          <div class="stat-label">Active Incidents</div>
+        </div>
+      </div>
+
+      <!-- Emergency Vehicles: 3 -->
+      <div class="stat-card">
+        <span class="stat-emoji">🚑</span>
+        <div>
+          <div class="stat-value">3</div>
+          <div class="stat-label">Emergency Priority Units</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== MAIN ADMIN GRID (Map + ML Predictions & Incidents) ===== -->
+    <div class="admin-grid">
+      
+      <!-- Left Column: Live Traffic Map with Colored Congestion Layers -->
+      <div class="map-panel">
+        <div class="map-header">
+          <div class="map-title">
+            <i class="fa-solid fa-satellite" style="color: var(--purple);"></i>
+            <span>Live City Sensor Network &bull; Patiala Metropolitan Area</span>
+          </div>
+          <div class="map-status-pill">
+            142 Intersections Connected
+          </div>
+        </div>
+        <div id="adminLiveMap" style="height: 580px;"></div>
+      </div>
+
+      <!-- Right Column: ML Predictions & Active Incidents (Figure 7) -->
+      <div>
+        
+        <!-- Module 1: ML Predictions Panel -->
+        <div class="admin-card">
+          <h3>
+            <span><i class="fa-solid fa-brain" style="color: var(--purple);"></i> ML Congestion Predictions</span>
+            <span class="hub-card-badge" style="background:#EDE9FE; color:#6D28D9;">Random Forest / XGBoost</span>
+          </h3>
+
+          <!-- Road A -->
+          <div class="prediction-row">
+            <div>
+              <div class="pred-road">Road A (Phase 7 Chowk)</div>
+              <div class="pred-transition">Current: <strong>Medium</strong> &rarr; Predicted: <strong style="color:#B45309;">High</strong></div>
+            </div>
+            <span class="pred-badge high">Medium &rarr; High</span>
+          </div>
+
+          <!-- Road B -->
+          <div class="prediction-row">
+            <div>
+              <div class="pred-road">Road B (Urban Estate Ring)</div>
+              <div class="pred-transition">Current: <strong>Low</strong> &rarr; Predicted: <strong style="color:#4338CA;">Medium</strong></div>
+            </div>
+            <span class="pred-badge medium">Low &rarr; Medium</span>
+          </div>
+
+          <!-- Road C -->
+          <div class="prediction-row">
+            <div>
+              <div class="pred-road">Road C (Main Bypass Highway)</div>
+              <div class="pred-transition">Current: <strong>High</strong> &rarr; Predicted: <strong style="color:#B91C1C;">Severe</strong></div>
+            </div>
+            <span class="pred-badge severe">High &rarr; Severe</span>
+          </div>
+
+          <!-- Road D -->
+          <div class="prediction-row">
+            <div>
+              <div class="pred-road">Road D (Lower Mall Road)</div>
+              <div class="pred-transition">Current: <strong>Low</strong> &rarr; Predicted: <strong style="color:#059669;">Low</strong></div>
+            </div>
+            <span class="pred-badge" style="background:#D1FAE5; color:#065F46;">Low &rarr; Low</span>
+          </div>
+        </div>
+
+        <!-- Module 2: Active Incidents List (Figure 7) -->
+        <div class="admin-card">
+          <h3>
+            <span><i class="fa-solid fa-circle-exclamation" style="color: #EF4444;"></i> Active Incidents Summary</span>
+            <a href="report-incident.html" class="chip" style="font-size:11px; padding:3px 10px;">+ New Incident</a>
+          </h3>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #FEF2F2; border-radius: var(--radius-sm); border: 1px solid #FECACA;">
+              <div>
+                <strong>💥 Accident</strong> &bull; Road C (Bypass)
+                <div style="font-size: 12px; color: #991B1B;">Two-vehicle collision &bull; lane blocked</div>
+              </div>
+              <span class="severity-pill critical">Critical</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #FFFBEB; border-radius: var(--radius-sm); border: 1px solid #FDE68A;">
+              <div>
+                <strong>🚧 Roadwork</strong> &bull; Road A (Phase 7)
+                <div style="font-size: 12px; color: #92400E;">Pipe laying underway &bull; single lane open</div>
+              </div>
+              <span class="severity-pill moderate">Moderate</span>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #EFF6FF; border-radius: var(--radius-sm); border: 1px solid #BFDBFE;">
+              <div>
+                <strong>🚗 Breakdown</strong> &bull; Road D (Mall Rd)
+                <div style="font-size: 12px; color: #1E40AF;">Stalled car on shoulder lane</div>
+              </div>
+              <span class="severity-pill minor">Minor</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ===== SECTION 3: SYSTEM ROLE-BASED ACCESS CONTROL (RBAC) ===== -->
+    <div class="admin-card" style="margin-top: 10px;">
+      <h3>
+        <span><i class="fa-solid fa-users-gear" style="color: var(--purple);"></i> User Access & Role-Based Privileges (RBAC)</span>
+        <span style="font-size: 12px; color: #6B7280; font-weight: normal;">Stateless JWT Architecture</span>
+      </h3>
+
+      <div style="overflow-x: auto;">
+        <table class="algo-table">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Assigned Role</th>
+              <th>Access Level</th>
+              <th>Permissions</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong> Chaudhary</strong></td>
+              <td><span class="hub-card-badge">Commuter / Driver</span></td>
+              <td>Standard User</td>
+              <td>Route planning, traffic map viewing, incident reporting</td>
+              <td><span style="color:#059669; font-weight:600;">● Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>Agrim Bhatt</strong></td>
+              <td><span class="hub-card-badge authority">Traffic Authority</span></td>
+              <td>Traffic Manager</td>
+              <td>Adaptive signal adjustments, manual overrides, incident verification</td>
+              <td><span style="color:#059669; font-weight:600;">● Active</span></td>
+            </tr>
+            <tr>
+              <td><strong>Shruti</strong></td>
+              <td><span class="hub-card-badge admin">System Administrator</span></td>
+              <td>Full Root Admin</td>
+              <td>Complete infrastructure access, user management, ML model retraining</td>
+              <td><span style="color:#059669; font-weight:600;">● Active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    let adminMap = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize Admin Leaflet Map with colored congestion polylines
+      const patiala = window.UrbanFlowData.getCityData('patiala');
+      adminMap = createLeafletMap('adminLiveMap', patiala.lat, patiala.lon, 13);
+
+      if (adminMap) {
+        // Draw Road A (Phase 7 - Amber Moderate)
+        const roadA = L.polyline([
+          [30.3475, 76.3750],
+          [30.3412, 76.3815],
+          [30.3340, 76.3890]
+        ], { color: '#F59E0B', weight: 6, opacity: 0.9 }).addTo(adminMap);
+        roadA.bindPopup('<b>Road A (Phase 7 Chowk)</b><br>Traffic: Moderate (Speed: 38 km/h)<br>ML Forecast: Rising to High');
+
+        // Draw Road B (Urban Estate Ring - Green Low)
+        const roadB = L.polyline([
+          [30.3544, 76.3688],
+          [30.3600, 76.3790],
+          [30.3510, 76.3920]
+        ], { color: '#10B981', weight: 6, opacity: 0.9 }).addTo(adminMap);
+        roadB.bindPopup('<b>Road B (Urban Estate Ring)</b><br>Traffic: Low (Speed: 52 km/h)<br>ML Forecast: Stable');
+
+        // Draw Road C (Main Bypass Highway - Red Severe)
+        const roadC = L.polyline([
+          [30.3340, 76.3890],
+          [30.3298, 76.3980],
+          [30.3220, 76.4100]
+        ], { color: '#EF4444', weight: 7, opacity: 0.95 }).addTo(adminMap);
+        roadC.bindPopup('<b>Road C (Main Bypass)</b><br>Traffic: Severe (Speed: 14 km/h)<br>Alert: Critical Accident Reported');
+
+        // Incident marker
+        L.marker([30.3340, 76.3890], {
+          icon: createCustomPin('#EF4444', '💥')
+        }).addTo(adminMap).bindPopup('<b>Critical Incident:</b> Two-car collision on Bypass exit');
+
+        // Fit bounds
+        adminMap.fitBounds(roadC.getBounds(), { padding: [50, 50] });
+      }
+
+      // Sync active incident count
+      const count = window.UrbanFlowData.getIncidents().length;
+      document.getElementById('adminIncCount').textContent = count;
+    });
+  </script>
+</body>
+</html>

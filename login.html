@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="login-page">
+
+  <div class="login-brand">
+    <h2>🚦 URBAN FLOW</h2>
+    <p>Intelligent Traffic & Mobility Platform</p>
+  </div>
+
+  <div class="login-wrap">
+    <div class="login-card">
+      <h1>Log In</h1>
+
+      <div class="login-error" id="loginErrorMsg"></div>
+
+      <form id="loginForm">
+        <!-- 3 User Types -->
+        <div class="field">
+          <label for="userType"><i class="fa-solid fa-user-shield"></i> User Type</label>
+          <select id="userType" required>
+            <option value="" disabled selected>Select your access level</option>
+            <option value="user">User / Commuter</option>
+            <option value="traffic_manager">Traffic Manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+        <!-- Username -->
+        <div class="field">
+          <label for="username"><i class="fa-solid fa-user"></i> Username</label>
+          <input type="text" id="username" placeholder="e.g. user, traffic_manager, or admin" required autocomplete="username">
+        </div>
+
+        <!-- Password with toggle visibility -->
+        <div class="field">
+          <label for="password"><i class="fa-solid fa-lock"></i> Password</label>
+          <div class="password-wrap">
+            <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+            <button type="button" class="toggle-pw" id="togglePwBtn" aria-label="Toggle password visibility">
+              <i class="fa-regular fa-eye" id="pwEyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">
+          SIGN IN <i class="fa-solid fa-arrow-right"></i>
+        </button>
+
+        <!-- 1-Click Demo Accounts for easy grading/evaluation -->
+        <div class="demo-credentials">
+          <p>Quick Demo Sign-In (Click any role):</p>
+          <div class="demo-chips">
+            <button type="button" class="demo-chip" onclick="fillDemo('user', 'user', 'user123')">
+              👤 Commuter (User)
+            </button>
+            <button type="button" class="demo-chip" onclick="fillDemo('traffic_manager', 'traffic_manager', 'traffic123')">
+              🚦 Traffic Manager
+            </button>
+            <button type="button" class="demo-chip" onclick="fillDemo('admin', 'admin', 'admin123')">
+              ⚙️ Admin
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Password toggle
+    const toggleBtn = document.getElementById('togglePwBtn');
+    const pwInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('pwEyeIcon');
+
+    toggleBtn.addEventListener('click', () => {
+      if (pwInput.type === 'password') {
+        pwInput.type = 'text';
+        eyeIcon.className = 'fa-regular fa-eye-slash';
+      } else {
+        pwInput.type = 'password';
+        eyeIcon.className = 'fa-regular fa-eye';
+      }
+    });
+
+    // Fill demo credentials helper
+    function fillDemo(type, username, password) {
+      document.getElementById('userType').value = type;
+      document.getElementById('username').value = username;
+      document.getElementById('password').value = password;
+      document.getElementById('loginErrorMsg').style.display = 'none';
+      // Auto submit for convenience
+      doLogin(type, username, password);
+    }
+
+    // Login form submission & authentication
+    const form = document.getElementById('loginForm');
+    const errorBox = document.getElementById('loginErrorMsg');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userType = document.getElementById('userType').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      doLogin(userType, username, password);
+    });
+
+    function doLogin(userType, username, password) {
+      const result = window.UrbanFlowData.authenticate(userType, username, password);
+
+      if (result.success) {
+        errorBox.style.display = 'none';
+        // Redirect to Third Page: Feature Hub
+        window.location.href = 'hub.html';
+      } else {
+        errorBox.textContent = result.message || 'Invalid username or password.';
+        errorBox.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
