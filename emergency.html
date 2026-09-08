@@ -6,8 +6,10 @@
   <title>Request Emergency Vehicle | Urban Flow</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        onerror="this.onerror=null; this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          onerror="var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'; document.head.appendChild(s);"></script>
 </head>
 <body class="dash-page">
 
@@ -121,22 +123,6 @@
           <div id="citizenRequestStatus" style="display:none; margin-top: 16px; padding: 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600;"></div>
         </div>
 
-        <h3>2. Emergency Corridor Path</h3>
-        
-        <div class="input-group">
-          <label for="emOrigin"><i class="fa-solid fa-hospital" style="color: #EF4444;"></i> Dispatch Origin</label>
-          <input type="text" id="emOrigin" value="Rajindra Hospital, Patiala" placeholder="Select a dispatch base...">
-        </div>
-
-        <div class="input-group">
-          <label for="emDestination"><i class="fa-solid fa-triangle-exclamation" style="color: #F59E0B;"></i> Destination / Incident Site</label>
-          <input type="text" id="emDestination" value="Phase 7 Industrial Area, Patiala" placeholder="Select or type the emergency site...">
-        </div>
-
-        <button type="button" class="btn-find-route" id="btnDispatchEmergency" onclick="dispatchEmergencyVehicle()" style="margin-top: 16px; background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);">
-          <i class="fa-solid fa-bullhorn"></i> DISPATCH & ACTIVATE GREEN WAVE
-        </button>
-
         <!-- DISPATCHER VIEW: work through incoming citizen requests -->
         <div id="dispatcherQueuePanel" style="display:none;">
           <h3>Incoming Emergency Requests</h3>
@@ -187,10 +173,9 @@
     let emPath = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-<<<<<<< HEAD
       const bases = window.UrbanFlowData.getEmergencyBaseOptions();
       const sites = window.UrbanFlowData.getEmergencySiteOptions();
-=======
+
       // A citizen/commuter requests a vehicle to come to them; a traffic
       // manager/admin works the incoming request queue instead of typing
       // source/destination themselves.
@@ -207,10 +192,6 @@
         renderRequestQueue();
         queueRefreshInterval = setInterval(renderRequestQueue, 3000);
       }
-
-      // Initialize map at Rajindra Hospital
-      emMap = createLeafletMap('emergencyMap', 30.3340, 76.3820, 14);
->>>>>>> 882a889 (Updated smart traffic system frontend)
 
       // Match the pre-filled input values against the known base / site lists
       emOriginPoint = findPoint(bases, document.getElementById('emOrigin').value) || bases[0];
@@ -434,11 +415,7 @@
       window.UrbanFlowData.setEmergency({
         vehicle: vehType,
         dispatchedAt: new Date().toLocaleTimeString(),
-<<<<<<< HEAD
         route: `${emOriginPoint.label} -> ${emDestPoint.label}`,
-=======
-        route: `Rajindra Hospital -> Phase 7 Chowk -> ${destinationLabel || 'Destination'}`,
->>>>>>> 882a889 (Updated smart traffic system frontend)
         preemptedIntersections: ['Phase 7 Chowk', 'Bypass South']
       });
 

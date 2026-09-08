@@ -749,7 +749,6 @@ const UrbanFlowData = (() => {
     EMERGENCY_BASES,
     EMERGENCY_SITES,
     ML_PREDICTIONS,
-    ROUTE_COMPARISONS,
     getLandmarkOptions,
     getCityOptions,
     getEmergencyBaseOptions,

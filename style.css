@@ -1086,6 +1086,144 @@ input, select, textarea {
   color: #fff;
 }
 
+/* Shared Notification Bell — injected next to the user badge on every
+   dashboard page. Shows the same live incident feed (accidents, roadwork,
+   blockages) that report-incident.html writes to, so any road issue
+   reported by anyone is visible from wherever you are in the app. */
+.notif-wrap {
+  position: relative;
+}
+
+.notif-bell-btn {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #1A1B2D;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.notif-bell-btn:hover {
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+.notif-badge-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0B0C14;
+}
+
+.notif-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  max-height: 420px;
+  overflow-y: auto;
+  background: #1A1B2D;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  z-index: 100;
+}
+
+.notif-wrap.open .notif-dropdown {
+  display: block;
+}
+
+.notif-dropdown-header {
+  padding: 10px 12px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #C4B5FD;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.notif-item-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.notif-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.notif-item-meta {
+  font-size: 11px;
+  color: #9CA3AF;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+
+.notif-item-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.notif-empty {
+  padding: 28px 12px;
+  text-align: center;
+  color: #6B7280;
+  font-size: 13px;
+}
+
+.notif-dropdown-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 4px;
+  padding-top: 6px;
+}
+
+.notif-dropdown-footer a {
+  display: block;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cyan-neon);
+  border-radius: var(--radius-sm);
+}
+
+.notif-dropdown-footer a:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* Hub Main Area */
 .hub-main {
   max-width: 1280px;

@@ -18,7 +18,7 @@
       <a href="index.html">Home</a>
       <a href="#about">About Us</a>
       <a href="#features">Core Features</a>
-      <a href="journey.html">Live Map</a>
+      <a href="login.html">Live Map</a>
     </nav>
     <div class="nav-right">
       <a href="login.html" class="btn-signin">
@@ -150,6 +150,34 @@
       </div>
     </footer>
   </section>
+
+  <!-- ===== FEATURE DETAIL MODAL (opened by the "Click to inspect feature" cards) ===== -->
+  <div class="feature-modal-backdrop" id="featureModalBackdrop" onclick="if (event.target === this) closeFeatureModal();">
+    <div class="feature-modal">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="modal-icon" id="modalIcon">🚦</div>
+          <div class="modal-title-wrap">
+            <h3 id="modalTitle">Feature</h3>
+            <span id="modalBadge">CATEGORY</span>
+          </div>
+        </div>
+        <div class="modal-close" onclick="closeFeatureModal()" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description" id="modalDescription"></p>
+        <div class="modal-stats-box" id="modalStatsBox"></div>
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="btn-secondary" style="padding: 10px 20px; font-size: 13px;" onclick="closeFeatureModal()">Close</a>
+        <a href="login.html" class="btn-primary" id="modalActionBtn" style="padding: 10px 20px; font-size: 13px;">
+          Launch Dashboard <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
 
   <script src="data.js"></script>
   <script src="script.js"></script>
