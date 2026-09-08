@@ -359,6 +359,163 @@ function attachOptionDropdown(target, config = {}) {
   };
 }
 
+/* ============================================================
+   Route engine — builds real driving routes between whatever
+   two places the user entered, using the public OSRM service.
+   Falls back to generated geometry when the service is offline,
+   so the page always has three alternatives to compare.
+   ============================================================ */
+
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1/driving';
+
+const TRAFFIC_PRESETS = {
+  heavy: { label: 'Heavy Traffic', cls: 'heavy', color: '#EF4444', factor: 1.45 },
+  moderate: { label: 'Moderate Traffic', cls: 'moderate', color: '#F59E0B', factor: 1.15 },
+  low: { label: 'Low Traffic', cls: 'low', color: '#10B981', factor: 1.0 }
+};
+
+function roadNamesFor(route) {
+  const names = [];
+  (route.legs || []).forEach(leg => {
+    (leg.steps || []).forEach(step => {
+      const name = (step.name || '').trim();
+      if (name && names[names.length - 1] !== name) names.push(name);
+    });
+  });
+  return names;
+}
+
+async function requestOsrmRoutes(points) {
+  const coords = points.map(p => `${p.lon},${p.lat}`).join(';');
+  const url = `${OSRM_BASE}/${coords}?alternatives=3&overview=full&geometries=geojson&steps=true`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    if (data.code !== 'Ok' || !Array.isArray(data.routes)) return [];
+
+    return data.routes.map(route => ({
+      pathCoords: route.geometry.coordinates.map(c => [c[1], c[0]]),
+      km: route.distance / 1000,
+      baseMin: route.duration / 60,
+      roads: roadNamesFor(route),
+      live: true
+    }));
+  } catch (err) {
+    return [];
+  }
+}
+
+// A waypoint pushed out to one side of the direct line, used to ask OSRM for a
+// genuinely different road route when it only offers one.
+function detourPoint(origin, dest, side) {
+  const midLat = (origin.lat + dest.lat) / 2;
+  const midLon = (origin.lon + dest.lon) / 2;
+  const spanKm = Math.max(1, window.UrbanFlowData.haversineKm(origin, dest));
+  const offsetKm = Math.min(8, spanKm * 0.35);
+
+  const dLat = dest.lat - origin.lat;
+  const dLon = dest.lon - origin.lon;
+  const len = Math.hypot(dLat, dLon) || 1;
+  const latPerKm = 1 / 111;
+  const lonPerKm = 1 / (111 * Math.cos(midLat * Math.PI / 180) || 1);
+
+  return {
+    lat: midLat + (-dLon / len) * offsetKm * latPerKm * side,
+    lon: midLon + (dLat / len) * offsetKm * lonPerKm * side
+  };
+}
+
+// Curved stand-in path used when the routing service cannot be reached
+function syntheticRoute(origin, dest, index) {
+  const straightKm = window.UrbanFlowData.haversineKm(origin, dest);
+  const bend = 0.06 + index * 0.05;
+  const points = [];
+  const steps = 26;
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const swell = Math.sin(t * Math.PI) * bend;
+    points.push([
+      origin.lat + (dest.lat - origin.lat) * t + swell * (dest.lon - origin.lon),
+      origin.lon + (dest.lon - origin.lon) * t - swell * (dest.lat - origin.lat)
+    ]);
+  }
+
+  const km = Math.max(0.4, straightKm * (1.25 + index * 0.14));
+  return { pathCoords: points, km, baseMin: (km / 24) * 60, roads: [], live: false };
+}
+
+function dedupeRoutes(routes) {
+  const seen = new Set();
+  return routes.filter(route => {
+    const key = route.km.toFixed(1);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Returns the three route alternatives keyed the way the UI expects
+ * ('shortest', 'fastest', 'avoidTolls'). The shortest real route is treated as
+ * the congested city corridor, the longest as the quiet outer link, and the
+ * middle one as the balanced option — the same story the mock UI has always
+ * told, but measured off real road geometry.
+ */
+async function buildRouteOptions(origin, dest) {
+  let routes = await requestOsrmRoutes([origin, dest]);
+
+  for (const side of [1, -1]) {
+    if (dedupeRoutes(routes).length >= 3) break;
+    const detour = await requestOsrmRoutes([origin, detourPoint(origin, dest, side), dest]);
+    if (detour.length) routes = routes.concat(detour[0]);
+  }
+
+  routes = dedupeRoutes(routes);
+  while (routes.length < 3) routes.push(syntheticRoute(origin, dest, routes.length));
+
+  routes.sort((a, b) => a.km - b.km);
+
+  const plan = [
+    { key: 'shortest', letter: 'B', title: 'Shortest Distance', traffic: 'heavy', route: routes[0] },
+    { key: 'fastest', letter: 'A', title: 'Balanced Route', traffic: 'moderate', route: routes[1] },
+    { key: 'avoidTolls', letter: 'C', title: 'Low Traffic & Toll Free', traffic: 'low', route: routes[2] }
+  ];
+
+  const options = {};
+  plan.forEach(entry => {
+    const preset = TRAFFIC_PRESETS[entry.traffic];
+    const minutes = Math.max(1, Math.round(entry.route.baseMin * preset.factor));
+    const roads = entry.route.roads.filter(Boolean);
+
+    options[entry.key] = {
+      key: entry.key,
+      letter: entry.letter,
+      title: entry.title,
+      pathCoords: entry.route.pathCoords,
+      km: entry.route.km,
+      distance: `${entry.route.km.toFixed(1)} km`,
+      minutes,
+      estTime: `${minutes} min`,
+      baseMinutes: Math.max(1, Math.round(entry.route.baseMin)),
+      trafficLabel: preset.label,
+      trafficClass: preset.cls,
+      trafficColor: preset.color,
+      live: entry.route.live,
+      roads,
+      via: roads.length ? `via ${roads.slice(0, 2).join(' & ')}` : 'via generated corridor'
+    };
+  });
+
+  // Whichever option is quickest once traffic is applied earns the badge
+  const best = Object.keys(options).reduce((a, b) => options[a].minutes <= options[b].minutes ? a : b);
+  options[best].recommended = true;
+
+  return options;
+}
+
 // Geocoding helper for city search
 async function geocodeCity(query, onSuccess, onError) {
   const clean = (query || '').trim();

@@ -64,42 +64,42 @@
       <div class="route-options-panel">
         <h2 style="font-size: 18px; font-weight: 700; color: #fff;">Optimal Route Alternatives</h2>
 
-        <!-- Route A (Recommended) -->
+        <!-- Route A — filled in from the live route computed for this journey -->
         <div class="route-option-card selected" id="cardRouteA" onclick="selectRoute('fastest')">
-          <span class="route-tag rec">Route A (Recommended)</span>
+          <span class="route-tag rec" id="tagRouteA">Route A</span>
           <div class="route-time-dist">
-            <h3>16 min</h3>
-            <span>7.2 km</span>
+            <h3 id="timeRouteA">—</h3>
+            <span id="distRouteA">Calculating…</span>
           </div>
           <div class="route-traffic-status">
-            <span class="traffic-dot moderate"></span>
-            <span>Moderate Traffic &bull; via Phase 7 Chowk & Bypass</span>
+            <span class="traffic-dot moderate" id="dotRouteA"></span>
+            <span id="descRouteA">Resolving your start and destination…</span>
           </div>
         </div>
 
         <!-- Route B -->
         <div class="route-option-card" id="cardRouteB" onclick="selectRoute('shortest')">
-          <span class="route-tag alt">Route B (Shortest Distance)</span>
+          <span class="route-tag alt" id="tagRouteB">Route B (Shortest Distance)</span>
           <div class="route-time-dist">
-            <h3>21 min</h3>
-            <span>6.4 km</span>
+            <h3 id="timeRouteB">—</h3>
+            <span id="distRouteB">Calculating…</span>
           </div>
           <div class="route-traffic-status">
-            <span class="traffic-dot heavy"></span>
-            <span>Heavy Traffic &bull; via City Market (Delay +5m)</span>
+            <span class="traffic-dot heavy" id="dotRouteB"></span>
+            <span id="descRouteB">Building alternatives…</span>
           </div>
         </div>
 
         <!-- Route C -->
         <div class="route-option-card" id="cardRouteC" onclick="selectRoute('avoidTolls')">
-          <span class="route-tag alt">Route C (Low Traffic & Toll Free)</span>
+          <span class="route-tag alt" id="tagRouteC">Route C (Low Traffic & Toll Free)</span>
           <div class="route-time-dist">
-            <h3>24 min</h3>
-            <span>9.1 km</span>
+            <h3 id="timeRouteC">—</h3>
+            <span id="distRouteC">Calculating…</span>
           </div>
           <div class="route-traffic-status">
-            <span class="traffic-dot low"></span>
-            <span>Low Traffic &bull; via Outer Link (Toll Free)</span>
+            <span class="traffic-dot low" id="dotRouteC"></span>
+            <span id="descRouteC">Building alternatives…</span>
           </div>
         </div>
 
@@ -136,32 +136,12 @@
                 <th>Total Time</th>
               </tr>
             </thead>
-            <tbody>
-              <tr class="highlight">
-                <td>A &rarr; B &rarr; D &rarr; F</td>
-                <td>7.2 km</td>
-                <td>16 min</td>
-                <td>Moderate</td>
-                <td><strong>16 min &#9733;</strong></td>
-              </tr>
-              <tr>
-                <td>A &rarr; C &rarr; D &rarr; F</td>
-                <td>6.4 km</td>
-                <td>21 min</td>
-                <td>Heavy</td>
-                <td>21 min</td>
-              </tr>
-              <tr>
-                <td>A &rarr; C &rarr; E &rarr; F</td>
-                <td>9.1 km</td>
-                <td>24 min</td>
-                <td>Low</td>
-                <td>24 min</td>
-              </tr>
+            <tbody id="algoTableBody">
+              <!-- Injected from the routes computed for this journey -->
             </tbody>
           </table>
-          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">
-            &#10003; <strong>Recommended Route:</strong> A &rarr; B &rarr; D &rarr; F utilizes traffic density weighting to minimize delay.
+          <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;" id="algoFootnote">
+            &#10003; Cost matrix is built from the live road geometry for your journey.
           </p>
         </div>
 
@@ -191,16 +171,24 @@
     let routeMap = null;
     let activePolyline = null;
     let alternativePolylines = [];
+    let endpointMarkers = [];
     let carMarker = null;
     let animationInterval = null;
     let currentKey = 'fastest';
 
-    document.addEventListener('DOMContentLoaded', () => {
+    // Everything below is derived from the from/to the user actually submitted
+    let routeOptions = null;
+    let originPlace = null;
+    let destPlace = null;
+
+    const CARD_IDS = { fastest: 'A', shortest: 'B', avoidTolls: 'C' };
+
+    document.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const query = window.UrbanFlowData.getLastRouteQuery();
 
-      const fromText = urlParams.get('from') || query.from;
-      const toText = urlParams.get('to') || query.to;
+      const fromText = (urlParams.get('from') || query.from || '').trim();
+      const toText = (urlParams.get('to') || query.to || '').trim();
       const prefText = urlParams.get('pref') || query.pref;
 
       document.getElementById('displayFrom').textContent = fromText;
@@ -211,100 +199,198 @@
       else if (prefText === 'avoidTolls') prefLabel = 'Avoid Tolls / Low Traffic';
       document.getElementById('displayPref').textContent = prefLabel;
 
-      const city = window.UrbanFlowData.getCityData('patiala');
-      routeMap = createLeafletMap('routeMap', city.lat, city.lon, 13);
+      document.getElementById('mapRouteHeader').textContent =
+        `Dynamic Path Geometry • ${shortLabel(fromText)} to ${shortLabel(toText)}`;
 
-      selectRoute(prefText && window.UrbanFlowData.ROUTE_COMPARISONS[prefText] ? prefText : 'fastest');
+      // 1. Turn both endpoints into real coordinates
+      originPlace = await locatePlace(fromText);
+      destPlace = await locatePlace(toText);
+
+      routeMap = createLeafletMap('routeMap', originPlace.lat, originPlace.lon, 13);
+
+      // 2. Ask the routing engine for alternatives between those two points
+      routeOptions = await buildRouteOptions(originPlace, destPlace);
+
+      renderRouteCards();
+      renderAlgoTable();
+      selectRoute(routeOptions[prefText] ? prefText : 'fastest');
     });
 
-    function selectRoute(key) {
-      currentKey = key;
-      const data = window.UrbanFlowData.ROUTE_COMPARISONS[key] || window.UrbanFlowData.ROUTE_COMPARISONS.fastest;
+    // Resolves a place name to coordinates: the app's own gazetteer first,
+    // then an online lookup, then the selected city as a last resort.
+    async function locatePlace(name) {
+      const known = window.UrbanFlowData.resolvePlace(name);
+      if (known) return { name, lat: known.lat, lon: known.lon, matched: known.name };
 
-      document.getElementById('cardRouteA').classList.toggle('selected', key === 'fastest');
-      document.getElementById('cardRouteB').classList.toggle('selected', key === 'shortest');
-      document.getElementById('cardRouteC').classList.toggle('selected', key === 'avoidTolls');
+      const online = await new Promise(resolve => {
+        geocodeCity(name, place => resolve(place), () => resolve(null));
+      });
+      if (online) return { name, lat: online.lat, lon: online.lon, matched: online.fullName || name };
+
+      const city = window.UrbanFlowData.getCityData(window.UrbanFlowData.getSelectedCityKey() || 'patiala');
+      return { name, lat: city.lat, lon: city.lon, matched: city.fullName, fallback: true };
+    }
+
+    function shortLabel(text) {
+      return (text || '').split(',')[0].trim() || 'Origin';
+    }
+
+    function renderRouteCards() {
+      Object.keys(CARD_IDS).forEach(key => {
+        const data = routeOptions[key];
+        const id = CARD_IDS[key];
+        if (!data) return;
+
+        document.getElementById('timeRoute' + id).textContent = data.estTime;
+        document.getElementById('distRoute' + id).textContent = data.distance;
+        document.getElementById('dotRoute' + id).className = 'traffic-dot ' + data.trafficClass;
+        document.getElementById('descRoute' + id).textContent = `${data.trafficLabel} • ${data.via}`;
+
+        const tag = document.getElementById('tagRoute' + id);
+        tag.textContent = `Route ${id} (${data.recommended ? 'Recommended' : data.title})`;
+        tag.className = 'route-tag ' + (data.recommended ? 'rec' : 'alt');
+      });
+    }
+
+    function renderAlgoTable() {
+      const body = document.getElementById('algoTableBody');
+      const order = ['fastest', 'shortest', 'avoidTolls'];
+      const best = order.find(k => routeOptions[k] && routeOptions[k].recommended) || 'fastest';
+
+      body.innerHTML = '';
+      order.forEach(key => {
+        const data = routeOptions[key];
+        if (!data) return;
+
+        const tr = document.createElement('tr');
+        if (key === best) tr.className = 'highlight';
+        tr.innerHTML = `
+          <td>Route ${data.letter}${data.roads.length ? ' &rarr; ' + data.roads.slice(0, 2).map(escapeHtml).join(' &rarr; ') : ''}</td>
+          <td>${data.distance}</td>
+          <td>${data.baseMinutes} min</td>
+          <td>${data.trafficLabel.replace(' Traffic', '')}</td>
+          <td>${key === best ? `<strong>${data.estTime} &#9733;</strong>` : data.estTime}</td>
+        `;
+        body.appendChild(tr);
+      });
+
+      const winner = routeOptions[best];
+      document.getElementById('algoFootnote').innerHTML =
+        `&#10003; <strong>Recommended:</strong> Route ${winner.letter} — ${winner.distance} of road weighted by ${winner.trafficLabel.toLowerCase()} gives the lowest total time (${winner.estTime}).`;
+    }
+
+    function selectRoute(key) {
+      if (!routeOptions) return;
+      const data = routeOptions[key] || routeOptions.fastest;
+      currentKey = data.key;
+
+      document.getElementById('cardRouteA').classList.toggle('selected', currentKey === 'fastest');
+      document.getElementById('cardRouteB').classList.toggle('selected', currentKey === 'shortest');
+      document.getElementById('cardRouteC').classList.toggle('selected', currentKey === 'avoidTolls');
 
       document.getElementById('routeSummaryTitle').textContent = `Route Details • ${data.estTime} (${data.distance})`;
-      
+
+      const waypoints = waypointsFor(data);
       const wpList = document.getElementById('waypointList');
       wpList.innerHTML = '';
-      data.waypoints.forEach((wp, idx) => {
+      waypoints.forEach((wp, idx) => {
         const li = document.createElement('li');
-        li.className = 'waypoint-item' + (idx === data.waypoints.length - 1 ? ' dest' : '');
+        li.className = 'waypoint-item' + (idx === waypoints.length - 1 ? ' dest' : '');
         li.textContent = wp;
         wpList.appendChild(li);
       });
 
-      if (routeMap) {
-        if (activePolyline) routeMap.removeLayer(activePolyline);
-        alternativePolylines.forEach(p => routeMap.removeLayer(p));
-        alternativePolylines = [];
-        if (carMarker) routeMap.removeLayer(carMarker);
-        if (animationInterval) clearInterval(animationInterval);
-        document.getElementById('navStatusBanner').style.display = 'none';
+      if (!routeMap) return;
 
-        Object.keys(window.UrbanFlowData.ROUTE_COMPARISONS).forEach(k => {
-          if (k !== key) {
-            const alt = window.UrbanFlowData.ROUTE_COMPARISONS[k];
-            const altLine = L.polyline(alt.pathCoords, {
-              color: '#4B5563',
-              weight: 4,
-              opacity: 0.5,
-              dashArray: '5, 10'
-            }).addTo(routeMap);
-            alternativePolylines.push(altLine);
-          }
-        });
+      if (activePolyline) routeMap.removeLayer(activePolyline);
+      alternativePolylines.forEach(p => routeMap.removeLayer(p));
+      alternativePolylines = [];
+      endpointMarkers.forEach(m => routeMap.removeLayer(m));
+      endpointMarkers = [];
+      if (carMarker) routeMap.removeLayer(carMarker);
+      if (animationInterval) clearInterval(animationInterval);
+      document.getElementById('navStatusBanner').style.display = 'none';
 
-        activePolyline = L.polyline(data.pathCoords, {
-          color: data.trafficColor || '#8B5CF6',
-          weight: 7,
-          opacity: 0.95
-        }).addTo(routeMap);
+      Object.keys(routeOptions).forEach(k => {
+        if (k === currentKey) return;
+        alternativePolylines.push(
+          L.polyline(routeOptions[k].pathCoords, {
+            color: '#4B5563', weight: 4, opacity: 0.5, dashArray: '5, 10'
+          }).addTo(routeMap)
+        );
+      });
 
-        const startCoord = data.pathCoords[0];
-        const endCoord = data.pathCoords[data.pathCoords.length - 1];
+      activePolyline = L.polyline(data.pathCoords, {
+        color: data.trafficColor || '#8B5CF6',
+        weight: 7,
+        opacity: 0.95
+      }).addTo(routeMap);
 
-        L.marker(startCoord, {
-          icon: createCustomPin('#10B981', 'A')
-        }).addTo(routeMap).bindPopup(`<b>Origin:</b> ${data.waypoints[0]}`);
+      endpointMarkers.push(
+        L.marker([originPlace.lat, originPlace.lon], { icon: createCustomPin('#10B981', 'A') })
+          .addTo(routeMap)
+          .bindPopup(`<b>Origin:</b> ${escapeHtml(originPlace.name)}`)
+      );
+      endpointMarkers.push(
+        L.marker([destPlace.lat, destPlace.lon], { icon: createCustomPin('#EF4444', 'B') })
+          .addTo(routeMap)
+          .bindPopup(`<b>Destination:</b> ${escapeHtml(destPlace.name)}`)
+      );
 
-        L.marker(endCoord, {
-          icon: createCustomPin('#EF4444', 'B')
-        }).addTo(routeMap).bindPopup(`<b>Destination:</b> ${data.waypoints[data.waypoints.length - 1]}`);
+      routeMap.fitBounds(activePolyline.getBounds(), { padding: [40, 40] });
+    }
 
-        routeMap.fitBounds(activePolyline.getBounds(), { padding: [40, 40] });
-      }
+    // Origin, the main roads the route actually uses, then the destination
+    function waypointsFor(data) {
+      const stops = [shortLabel(originPlace.name)];
+      data.roads.slice(0, 3).forEach(road => {
+        if (!stops.includes(road)) stops.push(road);
+      });
+      if (stops.length === 1) stops.push(`${data.distance} along the ${data.title.toLowerCase()}`);
+      stops.push(`${shortLabel(destPlace.name)} Arrival`);
+      return stops;
     }
 
     function startNavigationSimulation() {
-      const data = window.UrbanFlowData.ROUTE_COMPARISONS[currentKey] || window.UrbanFlowData.ROUTE_COMPARISONS.fastest;
+      if (!routeOptions || !routeMap) return;
+      const data = routeOptions[currentKey] || routeOptions.fastest;
       const coords = data.pathCoords;
-      if (!coords || coords.length < 2 || !routeMap) return;
+      if (!coords || coords.length < 2) return;
 
-      document.getElementById('navStatusBanner').style.display = 'block';
+      const banner = document.getElementById('navStatusBanner');
+      banner.style.display = 'block';
 
       if (carMarker) routeMap.removeLayer(carMarker);
       if (animationInterval) clearInterval(animationInterval);
 
-      carMarker = L.marker(coords[0], {
-        icon: createCustomPin('#06B6D4', '🚗')
-      }).addTo(routeMap);
+      carMarker = L.marker(coords[0], { icon: createCustomPin('#06B6D4', '🚗') }).addTo(routeMap);
 
-      let step = 0;
-      const totalSteps = coords.length;
+      // Long real-road geometries are stepped through so the drive takes ~20 ticks
+      const ticks = Math.min(20, coords.length - 1);
+      const stride = Math.max(1, Math.floor((coords.length - 1) / ticks));
+      let tick = 0;
 
       animationInterval = setInterval(() => {
-        step++;
-        if (step >= totalSteps) {
+        tick++;
+        const index = Math.min(coords.length - 1, tick * stride);
+        carMarker.setLatLng(coords[index]);
+
+        if (index >= coords.length - 1) {
           clearInterval(animationInterval);
-          document.getElementById('navStatusBanner').innerHTML = '<strong>🎉 Destination Reached!</strong> You have arrived at Patiala Bus Stand.';
+          banner.innerHTML = `<strong>🎉 Destination Reached!</strong> You have arrived at ${escapeHtml(destPlace.name)}.`;
           return;
         }
-        carMarker.setLatLng(coords[step]);
-        document.getElementById('navStatusBanner').innerHTML = `<i class="fa-solid fa-location-arrow"></i> Navigating: Approaching <strong>${data.waypoints[step] || 'Waypoint'}</strong>. ETA: ${Math.max(1, 16 - step * 3)} min.`;
-      }, 2000);
+
+        const remaining = Math.max(1, Math.round(data.minutes * (1 - index / (coords.length - 1))));
+        const nextRoad = data.roads[Math.min(data.roads.length - 1, Math.floor(tick / 4))] || shortLabel(destPlace.name);
+        banner.innerHTML = `<i class="fa-solid fa-location-arrow"></i> Navigating: Approaching <strong>${escapeHtml(nextRoad)}</strong>. ETA: ${remaining} min.`;
+      }, 1200);
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
     }
   </script>
 </body>

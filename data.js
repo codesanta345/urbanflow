@@ -72,58 +72,64 @@ const UrbanFlowData = (() => {
     };
   });
 
-  // Comprehensive Landmarks & Places for Instant Autocomplete Suggestions
+  /**
+   * Comprehensive Landmarks & Places for Instant Autocomplete Suggestions.
+   * Every entry carries coordinates so the route map can be drawn from whatever
+   * the user actually picked. Most were resolved against OpenStreetMap; the few
+   * marked `approx` are placed by neighbourhood because OSM has no entry for
+   * that name.
+   */
   const LANDMARKS = [
     // Patiala Landmarks
-    { name: 'Thapar University Main Gate, Patiala', category: 'Campus', icon: '🏫', city: 'patiala' },
-    { name: 'Thapar University Hostel Block J, Patiala', category: 'Campus', icon: '🏫', city: 'patiala' },
-    { name: 'Patiala Bus Stand, Near Railway Road', category: 'Transit', icon: '🚌', city: 'patiala' },
-    { name: 'Patiala Railway Station, Station Rd', category: 'Transit', icon: '🚆', city: 'patiala' },
-    { name: 'Phase 7 Chowk, Urban Estate, Patiala', category: 'Intersection', icon: '🚦', city: 'patiala' },
-    { name: 'Rajindra Hospital & Medical College, Patiala', category: 'Hospital', icon: '🏥', city: 'patiala' },
-    { name: 'Leela Bhawan Market, Patiala', category: 'Commercial', icon: '🛍️', city: 'patiala' },
-    { name: 'Model Town Main Market, Patiala', category: 'Commercial', icon: '🛍️', city: 'patiala' },
-    { name: 'Baradari Gardens, Patiala', category: 'Park', icon: '🌳', city: 'patiala' },
-    { name: 'Punjabi University Campus, Patiala', category: 'Campus', icon: '🏫', city: 'patiala' },
-    { name: 'Bypass Road Exit 2, Patiala', category: 'Highway', icon: '🛣️', city: 'patiala' },
-    { name: 'Fountain Chowk, Lower Mall Rd, Patiala', category: 'Intersection', icon: '🚦', city: 'patiala' },
-    { name: 'Omaxe Mall, Mall Road, Patiala', category: 'Shopping', icon: '🏬', city: 'patiala' },
-    { name: 'Modi College Chowk, Patiala', category: 'Intersection', icon: '🚦', city: 'patiala' },
-    { name: 'Urban Estate Phase 2 Market, Patiala', category: 'Residential', icon: '🏘️', city: 'patiala' },
+    { name: 'Thapar University Main Gate, Patiala', category: 'Campus', icon: '🏫', city: 'patiala', lat: 30.35453, lon: 76.36580 },
+    { name: 'Thapar University Hostel Block J, Patiala', category: 'Campus', icon: '🏫', city: 'patiala', lat: 30.35600, lon: 76.36800, approx: true },
+    { name: 'Patiala Bus Stand, Near Railway Road', category: 'Transit', icon: '🚌', city: 'patiala', lat: 30.34216, lon: 76.40227 },
+    { name: 'Patiala Railway Station, Station Rd', category: 'Transit', icon: '🚆', city: 'patiala', lat: 30.33750, lon: 76.40100, approx: true },
+    { name: 'Phase 7 Chowk, Urban Estate, Patiala', category: 'Intersection', icon: '🚦', city: 'patiala', lat: 30.34500, lon: 76.42000, approx: true },
+    { name: 'Rajindra Hospital & Medical College, Patiala', category: 'Hospital', icon: '🏥', city: 'patiala', lat: 30.32823, lon: 76.38583 },
+    { name: 'Leela Bhawan Market, Patiala', category: 'Commercial', icon: '🛍️', city: 'patiala', lat: 30.33506, lon: 76.38266 },
+    { name: 'Model Town Main Market, Patiala', category: 'Commercial', icon: '🛍️', city: 'patiala', lat: 30.34350, lon: 76.40200, approx: true },
+    { name: 'Baradari Gardens, Patiala', category: 'Park', icon: '🌳', city: 'patiala', lat: 30.33950, lon: 76.39120, approx: true },
+    { name: 'Punjabi University Campus, Patiala', category: 'Campus', icon: '🏫', city: 'patiala', lat: 30.35810, lon: 76.45033 },
+    { name: 'Bypass Road Exit 2, Patiala', category: 'Highway', icon: '🛣️', city: 'patiala', lat: 30.33574, lon: 76.44310 },
+    { name: 'Fountain Chowk, Lower Mall Rd, Patiala', category: 'Intersection', icon: '🚦', city: 'patiala', lat: 30.33125, lon: 76.38938 },
+    { name: 'Omaxe Mall, Mall Road, Patiala', category: 'Shopping', icon: '🏬', city: 'patiala', lat: 30.33350, lon: 76.39250, approx: true },
+    { name: 'Modi College Chowk, Patiala', category: 'Intersection', icon: '🚦', city: 'patiala', lat: 30.33050, lon: 76.38700, approx: true },
+    { name: 'Urban Estate Phase 2 Market, Patiala', category: 'Residential', icon: '🏘️', city: 'patiala', lat: 30.34823, lon: 76.44304 },
 
     // Chandigarh Landmarks
-    { name: 'Sector 17 Plaza, Chandigarh', category: 'Commercial', icon: '🛍️', city: 'chandigarh' },
-    { name: 'Elante Mall, Industrial Area Phase 1, Chandigarh', category: 'Shopping', icon: '🏬', city: 'chandigarh' },
-    { name: 'PGI Hospital (PGIMER), Sector 12, Chandigarh', category: 'Hospital', icon: '🏥', city: 'chandigarh' },
-    { name: 'Sukhna Lake Promenade, Chandigarh', category: 'Tourist', icon: '⛵', city: 'chandigarh' },
-    { name: 'ISBT Sector 43 Bus Terminus, Chandigarh', category: 'Transit', icon: '🚌', city: 'chandigarh' },
-    { name: 'ISBT Sector 17 Bus Stand, Chandigarh', category: 'Transit', icon: '🚌', city: 'chandigarh' },
-    { name: 'Panjab University (PU) Campus, Chandigarh', category: 'Campus', icon: '🏫', city: 'chandigarh' },
-    { name: 'Tribune Chowk, Chandigarh', category: 'Intersection', icon: '🚦', city: 'chandigarh' },
+    { name: 'Sector 17 Plaza, Chandigarh', category: 'Commercial', icon: '🛍️', city: 'chandigarh', lat: 30.74007, lon: 76.78259 },
+    { name: 'Elante Mall, Industrial Area Phase 1, Chandigarh', category: 'Shopping', icon: '🏬', city: 'chandigarh', lat: 30.70544, lon: 76.80096 },
+    { name: 'PGI Hospital (PGIMER), Sector 12, Chandigarh', category: 'Hospital', icon: '🏥', city: 'chandigarh', lat: 30.76110, lon: 76.77622 },
+    { name: 'Sukhna Lake Promenade, Chandigarh', category: 'Tourist', icon: '⛵', city: 'chandigarh', lat: 30.74198, lon: 76.81767 },
+    { name: 'ISBT Sector 43 Bus Terminus, Chandigarh', category: 'Transit', icon: '🚌', city: 'chandigarh', lat: 30.71632, lon: 76.74466 },
+    { name: 'ISBT Sector 17 Bus Stand, Chandigarh', category: 'Transit', icon: '🚌', city: 'chandigarh', lat: 30.73544, lon: 76.77925 },
+    { name: 'Panjab University (PU) Campus, Chandigarh', category: 'Campus', icon: '🏫', city: 'chandigarh', lat: 30.76024, lon: 76.76649 },
+    { name: 'Tribune Chowk, Chandigarh', category: 'Intersection', icon: '🚦', city: 'chandigarh', lat: 30.70363, lon: 76.79028 },
 
     // Delhi NCR Landmarks
-    { name: 'Connaught Place (Inner Circle), New Delhi', category: 'Commercial', icon: '🏛️', city: 'delhi' },
-    { name: 'Indira Gandhi International Airport (T3), Delhi', category: 'Airport', icon: '✈️', city: 'delhi' },
-    { name: 'New Delhi Railway Station (Paharganj Side)', category: 'Transit', icon: '🚆', city: 'delhi' },
-    { name: 'AIIMS Hospital, Ansari Nagar, New Delhi', category: 'Hospital', icon: '🏥', city: 'delhi' },
-    { name: 'India Gate, Rajpath, New Delhi', category: 'Monument', icon: '🏛️', city: 'delhi' },
-    { name: 'Cyber Hub, DLF Phase 2, Gurugram', category: 'IT Park', icon: '🏢', city: 'delhi' },
-    { name: 'Dhaula Kuan Intersection, Ring Road, Delhi', category: 'Intersection', icon: '🚦', city: 'delhi' },
-    { name: 'Kashmere Gate ISBT, Delhi', category: 'Transit', icon: '🚌', city: 'delhi' },
+    { name: 'Connaught Place (Inner Circle), New Delhi', category: 'Commercial', icon: '🏛️', city: 'delhi', lat: 28.63286, lon: 77.21947 },
+    { name: 'Indira Gandhi International Airport (T3), Delhi', category: 'Airport', icon: '✈️', city: 'delhi', lat: 28.55552, lon: 77.08512 },
+    { name: 'New Delhi Railway Station (Paharganj Side)', category: 'Transit', icon: '🚆', city: 'delhi', lat: 28.64309, lon: 77.21927 },
+    { name: 'AIIMS Hospital, Ansari Nagar, New Delhi', category: 'Hospital', icon: '🏥', city: 'delhi', lat: 28.56744, lon: 77.20963 },
+    { name: 'India Gate, Rajpath, New Delhi', category: 'Monument', icon: '🏛️', city: 'delhi', lat: 28.61293, lon: 77.22949 },
+    { name: 'Cyber Hub, DLF Phase 2, Gurugram', category: 'IT Park', icon: '🏢', city: 'delhi', lat: 28.49510, lon: 77.08851 },
+    { name: 'Dhaula Kuan Intersection, Ring Road, Delhi', category: 'Intersection', icon: '🚦', city: 'delhi', lat: 28.59187, lon: 77.16172 },
+    { name: 'Kashmere Gate ISBT, Delhi', category: 'Transit', icon: '🚌', city: 'delhi', lat: 28.66870, lon: 77.23042 },
 
     // Ludhiana & Amritsar Landmarks
-    { name: 'Clock Tower (Ghanta Ghar), Ludhiana', category: 'Landmark', icon: '🕰️', city: 'ludhiana' },
-    { name: 'PAU (Punjab Agricultural University) Gate 2, Ludhiana', category: 'Campus', icon: '🏫', city: 'ludhiana' },
-    { name: 'Golden Temple (Harmandir Sahib), Amritsar', category: 'Heritage', icon: '✨', city: 'amritsar' },
-    { name: 'Amritsar Junction Railway Station', category: 'Transit', icon: '🚆', city: 'amritsar' },
+    { name: 'Clock Tower (Ghanta Ghar), Ludhiana', category: 'Landmark', icon: '🕰️', city: 'ludhiana', lat: 30.91652, lon: 75.84831 },
+    { name: 'PAU (Punjab Agricultural University) Gate 2, Ludhiana', category: 'Campus', icon: '🏫', city: 'ludhiana', lat: 30.89859, lon: 75.81760 },
+    { name: 'Golden Temple (Harmandir Sahib), Amritsar', category: 'Heritage', icon: '✨', city: 'amritsar', lat: 31.61998, lon: 74.87653 },
+    { name: 'Amritsar Junction Railway Station', category: 'Transit', icon: '🚆', city: 'amritsar', lat: 31.63321, lon: 74.86714 },
 
     // Mumbai & Bangalore Landmarks
-    { name: 'Bandra Kurla Complex (BKC), Mumbai', category: 'Business', icon: '💼', city: 'mumbai' },
-    { name: 'Chhatrapati Shivaji Maharaj Terminus (CSMT), Mumbai', category: 'Transit', icon: '🚆', city: 'mumbai' },
-    { name: 'Marine Drive Promenade, South Mumbai', category: 'Tourist', icon: '🌊', city: 'mumbai' },
-    { name: 'Electronic City Phase 1 (Toll Gate), Bengaluru', category: 'Tech Park', icon: '🏢', city: 'bangalore' },
-    { name: 'Indiranagar 100ft Road, Bengaluru', category: 'Commercial', icon: '🛍️', city: 'bangalore' },
-    { name: 'Kempegowda International Airport, Bengaluru', category: 'Airport', icon: '✈️', city: 'bangalore' }
+    { name: 'Bandra Kurla Complex (BKC), Mumbai', category: 'Business', icon: '💼', city: 'mumbai', lat: 19.05927, lon: 72.86133 },
+    { name: 'Chhatrapati Shivaji Maharaj Terminus (CSMT), Mumbai', category: 'Transit', icon: '🚆', city: 'mumbai', lat: 18.93986, lon: 72.83552 },
+    { name: 'Marine Drive Promenade, South Mumbai', category: 'Tourist', icon: '🌊', city: 'mumbai', lat: 18.92959, lon: 72.82160 },
+    { name: 'Electronic City Phase 1 (Toll Gate), Bengaluru', category: 'Tech Park', icon: '🏢', city: 'bangalore', lat: 12.84968, lon: 77.66497 },
+    { name: 'Indiranagar 100ft Road, Bengaluru', category: 'Commercial', icon: '🛍️', city: 'bangalore', lat: 12.98124, lon: 77.64077 },
+    { name: 'Kempegowda International Airport, Bengaluru', category: 'Airport', icon: '✈️', city: 'bangalore', lat: 13.19760, lon: 77.70749 }
   ];
 
   // Preset cities with coordinates and traffic metrics
@@ -228,25 +234,27 @@ const UrbanFlowData = (() => {
     }
   };
 
-  // Emergency dispatch bases (approximate Patiala coordinates for the demo corridor)
+  // Emergency dispatch bases. Rajindra Hospital is the OpenStreetMap position;
+  // the rest are placed by neighbourhood (OSM has no entry under these names).
   const EMERGENCY_BASES = [
-    { name: 'Rajindra Hospital, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.3340, lon: 76.3820 },
-    { name: 'Civil Hospital, Rajpura Road, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.3452, lon: 76.4012 },
-    { name: 'Columbia Asia Hospital, Bhadson Road, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.3565, lon: 76.3618 },
-    { name: 'Fire Station, Sirhind Road, Patiala', type: 'Fire Station', icon: '🚒', lat: 30.3262, lon: 76.4038 },
-    { name: 'Police Control Room, Mall Road, Patiala', type: 'Police Base', icon: '🚓', lat: 30.3395, lon: 76.3905 }
+    { name: 'Rajindra Hospital, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.32823, lon: 76.38583 },
+    { name: 'Civil Hospital, Rajpura Road, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.34520, lon: 76.40120, approx: true },
+    { name: 'Columbia Asia Hospital, Bhadson Road, Patiala', type: 'Hospital Base', icon: '🏥', lat: 30.35650, lon: 76.36180, approx: true },
+    { name: 'Fire Station, Sirhind Road, Patiala', type: 'Fire Station', icon: '🚒', lat: 30.32620, lon: 76.40380, approx: true },
+    { name: 'Police Control Room, Mall Road, Patiala', type: 'Police Base', icon: '🚓', lat: 30.33950, lon: 76.39050, approx: true }
   ];
 
-  // Emergency destinations / incident sites
+  // Emergency destinations / incident sites (coordinates shared with LANDMARKS
+  // wherever the same place appears in both lists)
   const EMERGENCY_SITES = [
-    { name: 'Phase 7 Industrial Area, Patiala', type: 'Industrial Zone', icon: '🏭', lat: 30.3544, lon: 76.3688 },
-    { name: 'Phase 7 Chowk, Urban Estate, Patiala', type: 'Intersection', icon: '🚦', lat: 30.3420, lon: 76.3810 },
-    { name: 'Thapar University Main Gate, Patiala', type: 'Campus', icon: '🏫', lat: 30.3548, lon: 76.3660 },
-    { name: 'Patiala Bus Stand, Near Railway Road', type: 'Transit Hub', icon: '🚌', lat: 30.3298, lon: 76.3980 },
-    { name: 'Leela Bhawan Market, Patiala', type: 'Commercial', icon: '🛍️', lat: 30.3322, lon: 76.3930 },
-    { name: 'Bypass Road Exit 2, Patiala', type: 'Highway', icon: '🛣️', lat: 30.3412, lon: 76.3815 },
-    { name: 'Fountain Chowk, Lower Mall Rd, Patiala', type: 'Intersection', icon: '🚦', lat: 30.3378, lon: 76.3875 },
-    { name: 'Baradari Gardens, Patiala', type: 'Park', icon: '🌳', lat: 30.3430, lon: 76.3960 }
+    { name: 'Phase 7 Industrial Area, Patiala', type: 'Industrial Zone', icon: '🏭', lat: 30.35440, lon: 76.36880, approx: true },
+    { name: 'Phase 7 Chowk, Urban Estate, Patiala', type: 'Intersection', icon: '🚦', lat: 30.34500, lon: 76.42000, approx: true },
+    { name: 'Thapar University Main Gate, Patiala', type: 'Campus', icon: '🏫', lat: 30.35453, lon: 76.36580 },
+    { name: 'Patiala Bus Stand, Near Railway Road', type: 'Transit Hub', icon: '🚌', lat: 30.34216, lon: 76.40227 },
+    { name: 'Leela Bhawan Market, Patiala', type: 'Commercial', icon: '🛍️', lat: 30.33506, lon: 76.38266 },
+    { name: 'Bypass Road Exit 2, Patiala', type: 'Highway', icon: '🛣️', lat: 30.33574, lon: 76.44310 },
+    { name: 'Fountain Chowk, Lower Mall Rd, Patiala', type: 'Intersection', icon: '🚦', lat: 30.33125, lon: 76.38938 },
+    { name: 'Baradari Gardens, Patiala', type: 'Park', icon: '🌳', lat: 30.33950, lon: 76.39120, approx: true }
   ];
 
   // Seed Incidents
@@ -539,6 +547,56 @@ const UrbanFlowData = (() => {
     }).slice(0, 6);
   }
 
+  /* ---- Place lookup: turns whatever the user typed or picked into coordinates ---- */
+
+  function comparableName(value) {
+    return (value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  /**
+   * Resolves a place name to { name, lat, lon, source } using the app's own
+   * gazetteer: landmarks first, then emergency bases/sites, then preset cities,
+   * then a loose "starts with / contains" match so a partially typed name still
+   * lands somewhere sensible. Returns null when nothing matches — the caller can
+   * then fall back to an online lookup.
+   */
+  function resolvePlace(name) {
+    const key = comparableName(name);
+    if (!key) return null;
+
+    const pool = [];
+    LANDMARKS.forEach(l => pool.push({ name: l.name, lat: l.lat, lon: l.lon, source: 'landmark' }));
+    EMERGENCY_BASES.forEach(b => pool.push({ name: b.name, lat: b.lat, lon: b.lon, source: 'base' }));
+    EMERGENCY_SITES.forEach(s => pool.push({ name: s.name, lat: s.lat, lon: s.lon, source: 'site' }));
+    Object.keys(CITIES).forEach(k => {
+      const c = CITIES[k];
+      pool.push({ name: c.name, lat: c.lat, lon: c.lon, source: 'city', cityKey: k });
+      pool.push({ name: c.fullName, lat: c.lat, lon: c.lon, source: 'city', cityKey: k });
+    });
+
+    const usable = pool.filter(p => typeof p.lat === 'number' && typeof p.lon === 'number');
+
+    const exact = usable.find(p => comparableName(p.name) === key);
+    if (exact) return exact;
+
+    const prefix = usable.find(p => comparableName(p.name).startsWith(key));
+    if (prefix) return prefix;
+
+    return usable.find(p => comparableName(p.name).indexOf(key) !== -1) || null;
+  }
+
+  // Straight-line distance in km between two { lat, lon } points
+  function haversineKm(a, b) {
+    const toRad = deg => deg * Math.PI / 180;
+    const R = 6371;
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lon - a.lon);
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+
   /* ---- Option list providers for the input-bar dropdowns ---- */
 
   // All landmarks as dropdown options, grouped by city with the active city first
@@ -734,6 +792,8 @@ const UrbanFlowData = (() => {
     EMERGENCY_SITES,
     ML_PREDICTIONS,
     ROUTE_COMPARISONS,
+    resolvePlace,
+    haversineKm,
     getLandmarkOptions,
     getCityOptions,
     getEmergencyBaseOptions,
