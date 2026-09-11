@@ -216,9 +216,10 @@
       const user = window.UrbanFlowData.getCurrentUser();
       const role = (user && user.role) ? user.role : 'user';
 
-      // Update Top Nav with the name captured at login
-      const userName = user.displayName || user.username || 'Guest';
-      document.getElementById('navUserName').textContent = userName.split(' ')[0];
+      // Update Top Nav with the full name and role captured at login
+      const userName = user.displayName || user.username || 'User';
+      const roleLabel = role === 'admin' ? 'Admin' : (role === 'traffic_manager' ? 'Traffic Manager' : 'User');
+      document.getElementById('navUserName').textContent = `${userName} (${roleLabel})`;
       document.getElementById('navUserAvatar').textContent = userName.charAt(0).toUpperCase();
 
       const rolePill = document.getElementById('navUserRole');

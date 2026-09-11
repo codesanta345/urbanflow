@@ -170,21 +170,40 @@ function updateNavUser() {
   const avatarEl = document.getElementById('navUserAvatar');
   const modeEl = document.getElementById('navUserModeLabel');
 
-  // Name and initial always come from whoever signed in
-  const fullName = user.displayName || user.username || 'Guest';
+  const fullName = user.displayName || user.username || 'User';
+  let roleLabel = 'Commuter';
+  let roleColor = '#3B82F6';
 
-  if (nameEl) nameEl.textContent = fullName.split(' ')[0];
+  if (user.role === 'traffic_manager') {
+    roleLabel = 'Traffic Manager';
+    roleColor = '#F59E0B';
+  } else if (user.role === 'admin') {
+    roleLabel = 'Admin';
+    roleColor = '#EF4444';
+  }
+
+  // Display user's name and role in navbar badge
+  if (nameEl) {
+    nameEl.textContent = `${fullName} (${roleLabel})`;
+  }
   if (roleEl) {
-    if (user.role === 'traffic_manager') roleEl.textContent = 'Traffic Authority';
-    else if (user.role === 'admin') roleEl.textContent = 'System Admin';
-    else roleEl.textContent = 'Commuter';
+    roleEl.textContent = roleLabel;
   }
   if (avatarEl) {
     avatarEl.textContent = fullName.charAt(0).toUpperCase();
+    avatarEl.style.background = roleColor;
   }
   if (modeEl) {
-    modeEl.textContent = getRoleModeLabel(user.role);
+    modeEl.textContent = `${fullName} • ${roleLabel} Mode`;
   }
+
+  // Update in-page name tags if present
+  document.querySelectorAll('.active-user-name').forEach(el => {
+    el.textContent = fullName;
+  });
+  document.querySelectorAll('.active-user-role').forEach(el => {
+    el.textContent = roleLabel;
+  });
 }
 
 function getRoleModeLabel(role) {

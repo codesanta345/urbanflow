@@ -89,8 +89,14 @@
 
       if (result.success) {
         errorBox.style.display = 'none';
-        // Redirect to Third Page: Feature Hub
-        window.location.href = 'hub.html';
+        // Redirect to matching role page
+        if (userType === 'admin') {
+          window.location.href = 'admin.html';
+        } else if (userType === 'traffic_manager') {
+          window.location.href = 'traffic-manager.html';
+        } else {
+          window.location.href = 'hub.html';
+        }
       } else {
         errorBox.textContent = result.message || 'Invalid username or password.';
         errorBox.style.display = 'block';
