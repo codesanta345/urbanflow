@@ -1,2 +1,5 @@
 START_PROJECT.bat
 .claude/
+node_modules/
+.DS_Store
+.vercel/
