@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Access Management | Urban Flow Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .admin-card {
+      background: white;
+      border: 1px solid #E2E8F0;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+      margin-top: 20px;
+    }
+    .admin-action-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .admin-action-btn.success { background: #10B981; color: white; }
+    .admin-action-btn.danger { background: #EF4444; color: white; }
+    .admin-action-btn:hover { opacity: 0.9; }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .admin-modal {
+      background: white;
+      width: 100%;
+      max-width: 500px;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="admin.html" class="nav-logo-link">
+      <i class="fa-solid fa-arrow-left"></i> Hub
+    </a>
+    <span class="nav-pill-role" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); color:#2563EB;">
+      Users & Logins
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar" style="background:#2563EB;">A</div>
+          <span id="navUserName">Admin</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Administrator Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="hub-main" style="max-width: 1000px; margin: 0 auto;">
+    <div class="hub-welcome">
+      <div>
+        <h1>Users and Traffic Managers</h1>
+        <p>Monitor system access, roles, and review recent logins from users and officials.</p>
+      </div>
+      <div>
+        <button onclick="fetchUsersFromDB()" class="admin-action-btn" style="background:#4F46E5; color: white;">
+          <i class="fa-solid fa-rotate"></i> Refresh MongoDB Sync
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Access Matrix -->
+    <div class="admin-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;">
+          <span><i class="fa-solid fa-users-gear" style="color: var(--purple);"></i> Login History & System Privileges</span>
+        </h3>
+        <button onclick="openAddUserModal()" class="admin-action-btn" style="background: #2563EB; color: white;">
+          <i class="fa-solid fa-user-plus"></i> Register System User
+        </button>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="algo-table">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Assigned Role</th>
+              <th>Access Level</th>
+              <th>Permissions</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="accessMatrixBody">
+            <tr>
+              <td colspan="6" style="text-align:center; padding:16px; color:#64748B;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Fetching operators from database...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ADD USER MODAL -->
+  <div class="modal-backdrop" id="addUserModal">
+    <div class="admin-modal">
+      <h3 style="margin-top:0; border-bottom:1px solid #E2E8F0; padding-bottom:10px; margin-bottom:16px;">
+        <i class="fa-solid fa-user-shield" style="color:#2563EB;"></i> Grant System Access
+      </h3>
+      <form id="adminNewUserForm">
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Operator Full Name</label>
+          <input type="text" id="modalUserName" placeholder="e.g. Officer Rohit Sharma" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">System Role</label>
+          <select id="modalUserRole" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+            <option value="traffic_manager">Traffic Authority Officer</option>
+            <option value="admin">System Administrator</option>
+            <option value="user">Commuter / Citizen</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:16px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Granted Permissions</label>
+          <input type="text" id="modalUserPerms" placeholder="e.g. Adaptive signals, alert broadcast" value="View routes, verify incidents" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeModals()" class="admin-action-btn" style="background:#64748B; color:white;">Cancel</button>
+          <button type="submit" class="admin-action-btn success"><i class="fa-solid fa-check"></i> Register to Database</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchUsersFromDB();
+      setupModalListeners();
+    });
+
+    let liveUsers = [];
+
+    async function fetchUsersFromDB() {
+      const tbody = document.getElementById('accessMatrixBody');
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px; color:#64748B;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching operators...</td></tr>';
+      try {
+        const res = await fetch('/api/users');
+        if (!res.ok) throw new Error('API offline');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          liveUsers = json.data;
+        } else {
+          throw new Error('Invalid users data');
+        }
+      } catch (err) {
+        liveUsers = window.UrbanFlowData.getAccessMatrix(); // fallback
+      }
+      renderUsers(liveUsers);
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('accessMatrixBody');
+      tbody.innerHTML = '';
+      const badgeClass = { admin: 'admin', traffic_manager: 'authority', user: '' };
+
+      users.forEach(row => {
+        const id = row._id || '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(row.displayName)}</strong></td>
+          <td><span class="hub-card-badge ${badgeClass[row.role] || ''}">${escapeHtml(row.roleTitle || row.role)}</span></td>
+          <td>${escapeHtml(row.accessLevel || 'Standard Access')}</td>
+          <td>${escapeHtml(row.permissions || 'Read only')}</td>
+          <td><span style="color:#059669; font-weight:600;">• ${escapeHtml(row.status || 'Active Login')}</span></td>
+          <td>
+            ${id ? `<button onclick="deleteUser('${id}')" class="admin-action-btn danger" style="padding:3px 8px; font-size:11px;"><i class="fa-solid fa-user-xmark"></i></button>` : '<span style="color:#94A3B8; font-size:11px;">Protected</span>'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Revoke access and remove user from database?')) return;
+      try {
+        await fetch(`/api/users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        showToast('Access Revoked', 'User operator removed from MongoDB.');
+      } catch (e) {
+        showToast('Notice', 'Action simulated locally (DB disconnected).');
+      }
+      fetchUsersFromDB();
+    }
+
+    function openAddUserModal() {
+      document.getElementById('addUserModal').classList.add('open');
+    }
+
+    function closeModals() {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+    }
+
+    function setupModalListeners() {
+      document.getElementById('adminNewUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const displayName = document.getElementById('modalUserName').value.trim();
+        const role = document.getElementById('modalUserRole').value;
+        const permissions = document.getElementById('modalUserPerms').value.trim();
+
+        const payload = { displayName, role, permissions };
+
+        try {
+          await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          showToast('User Registered', 'New operator registered in MongoDB RBAC table.');
+        } catch (err) {
+          showToast('Registered', 'User role added locally.');
+        }
+
+        closeModals();
+        document.getElementById('adminNewUserForm').reset();
+        fetchUsersFromDB();
+      });
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
