@@ -6,58 +6,7 @@
   <title>Admin Hub | Urban Flow</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .admin-hub-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      margin-top: 30px;
-    }
-    .admin-feature-card {
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: var(--radius-md);
-      padding: 40px 24px;
-      text-align: center;
-      transition: all 0.3s;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-    }
-    .admin-feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-      border-color: #2563EB;
-    }
-    .feature-icon {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 32px;
-      margin-bottom: 20px;
-    }
-    .feature-icon.radar { background: #EFF6FF; color: #2563EB; }
-    .feature-icon.incidents { background: #FEF2F2; color: #DC2626; }
-    .feature-icon.users { background: #F5F3FF; color: #7C3AED; }
-    
-    .admin-feature-card h3 {
-      font-size: 20px;
-      color: #0F172A;
-      margin-bottom: 12px;
-    }
-    .admin-feature-card p {
-      font-size: 14px;
-      color: #64748B;
-      line-height: 1.5;
-    }
-  </style>
+  <!-- Using global style.css for dark theme matching -->
 </head>
 <body class="dash-page">
 
@@ -91,39 +40,66 @@
   </nav>
 
   <main class="hub-main" style="max-width: 1100px; margin: 0 auto;">
-    <div class="hub-welcome" style="margin-bottom: 10px;">
+    <div class="hub-welcome" style="margin-bottom: 24px;">
       <div>
         <h1>Central Administrator Control Center</h1>
         <p>Manage citywide traffic predictions, verify reported incidents, and monitor system users.</p>
       </div>
     </div>
 
-    <div class="admin-hub-grid">
+    <div class="hub-cards-grid">
       <!-- Feature 1: ML Prediction (Radar) -->
-      <a href="admin-radar.html" class="admin-feature-card">
-        <div class="feature-icon radar">
-          <i class="fa-solid fa-satellite-dish"></i>
+      <a href="admin-radar.html" class="hub-card">
+        <div>
+          <div class="hub-card-header">
+            <div class="hub-card-icon" style="background: rgba(37, 99, 235, 0.18); border-color: rgba(37, 99, 235, 0.3); color: #60A5FA;">
+              <i class="fa-solid fa-satellite-dish"></i>
+            </div>
+            <span class="hub-card-badge" style="background: rgba(37, 99, 235, 0.2); color: #93C5FD;">Radar</span>
+          </div>
+          <h3>ML Traffic Prediction Map</h3>
+          <p>View natural city maps, dynamic congestion levels, and predictive traffic flow radar across city corridors.</p>
         </div>
-        <h3>ML Traffic Prediction Map</h3>
-        <p>View natural city maps, dynamic congestion levels, and predictive traffic flow radar across city corridors.</p>
+        <div class="hub-card-action" style="color: #60A5FA;">
+          <span>Explore Traffic Radar</span>
+          <span><i class="fa-solid fa-arrow-right"></i></span>
+        </div>
       </a>
 
       <!-- Feature 2: Incident Reports -->
-      <a href="admin-incidents.html" class="admin-feature-card">
-        <div class="feature-icon incidents">
-          <i class="fa-solid fa-triangle-exclamation"></i>
+      <a href="admin-incidents.html" class="hub-card">
+        <div>
+          <div class="hub-card-header">
+            <div class="hub-card-icon" style="background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.3); color: #F87171;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <span class="hub-card-badge admin">Alerts</span>
+          </div>
+          <h3>Incident Reports</h3>
+          <p>Monitor live accident reports. Admins can verify issues or delete fake/resolved incidents from the database.</p>
         </div>
-        <h3>Incident Reports</h3>
-        <p>Monitor live accident reports. Admins can verify issues or delete fake/resolved incidents from the database.</p>
+        <div class="hub-card-action" style="color: #F87171;">
+          <span>Manage Incidents</span>
+          <span><i class="fa-solid fa-arrow-right"></i></span>
+        </div>
       </a>
 
       <!-- Feature 3: Users & Traffic Managers -->
-      <a href="admin-users.html" class="admin-feature-card">
-        <div class="feature-icon users">
-          <i class="fa-solid fa-users-gear"></i>
+      <a href="admin-users.html" class="hub-card">
+        <div>
+          <div class="hub-card-header">
+            <div class="hub-card-icon" style="background: rgba(124, 58, 237, 0.18); border-color: rgba(124, 58, 237, 0.3); color: #A78BFA;">
+              <i class="fa-solid fa-users-gear"></i>
+            </div>
+            <span class="hub-card-badge">Access</span>
+          </div>
+          <h3>Users & Traffic Managers</h3>
+          <p>View the login history and access table. See exactly which users and traffic managers have accessed the system.</p>
         </div>
-        <h3>Users & Traffic Managers</h3>
-        <p>View the login history and access table. See exactly which users and traffic managers have accessed the system.</p>
+        <div class="hub-card-action">
+          <span>Manage Users</span>
+          <span><i class="fa-solid fa-arrow-right"></i></span>
+        </div>
       </a>
     </div>
   </main>

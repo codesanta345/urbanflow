@@ -7,15 +7,6 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Admin Feature Card Styling */
-    .admin-card {
-      background: white;
-      border: 1px solid #E2E8F0;
-      border-radius: var(--radius-md);
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-      margin-top: 20px;
-    }
     .admin-action-btn {
       padding: 8px 14px;
       border: none;
@@ -32,8 +23,8 @@
     .admin-action-btn:hover { opacity: 0.9; }
 
     .incident-admin-item {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      background: #18192A;
+      border: 1px solid rgba(255,255,255,0.08);
       padding: 14px;
       border-radius: var(--radius-sm);
       margin-bottom: 10px;
@@ -45,16 +36,16 @@
       font-weight: 700;
       text-transform: uppercase;
     }
-    .severity-pill.critical { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
-    .severity-pill.major { background: #FFF7ED; color: #EA580C; border: 1px solid #FFEDD5; }
-    .severity-pill.minor { background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; }
+    .severity-pill.critical { background: rgba(220, 38, 38, 0.2); color: #FCA5A5; border: 1px solid rgba(220, 38, 38, 0.4); }
+    .severity-pill.major { background: rgba(234, 88, 12, 0.2); color: #FDBA74; border: 1px solid rgba(234, 88, 12, 0.4); }
+    .severity-pill.minor { background: rgba(100, 116, 139, 0.2); color: #CBD5E1; border: 1px solid rgba(100, 116, 139, 0.4); }
 
     /* Modal Styling */
     .modal-backdrop {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.8);
       z-index: 9999;
       align-items: center;
       justify-content: center;
@@ -64,17 +55,19 @@
       display: flex;
     }
     .admin-modal {
-      background: white;
+      background: #141524;
+      color: #fff;
       width: 100%;
       max-width: 500px;
       border-radius: var(--radius-md);
       padding: 24px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255,255,255,0.1);
     }
     
     .db-status-bar {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
+      background: #18192A;
+      border: 1px solid rgba(255,255,255,0.08);
       border-radius: var(--radius-sm);
       padding: 12px 16px;
       margin-top: 10px;
@@ -88,7 +81,7 @@
       gap: 6px;
       font-size: 13px;
       font-weight: 600;
-      color: #0F172A;
+      color: #F8FAFC;
     }
     .pulse-dot {
       width: 8px;
@@ -102,6 +95,12 @@
       0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
       70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
       100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+    
+    .input-group input, .input-group select, .input-group textarea {
+      background: #0B0C10 !important;
+      color: #fff !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
     }
   </style>
 </head>

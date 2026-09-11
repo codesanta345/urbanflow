@@ -7,14 +7,6 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    .admin-card {
-      background: white;
-      border: 1px solid #E2E8F0;
-      border-radius: var(--radius-md);
-      padding: 20px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-      margin-top: 20px;
-    }
     .admin-action-btn {
       padding: 8px 14px;
       border: none;
@@ -35,7 +27,7 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.8);
       z-index: 9999;
       align-items: center;
       justify-content: center;
@@ -45,12 +37,20 @@
       display: flex;
     }
     .admin-modal {
-      background: white;
+      background: #141524;
+      color: #fff;
       width: 100%;
       max-width: 500px;
       border-radius: var(--radius-md);
       padding: 24px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .input-group input, .input-group select {
+      background: #0B0C10 !important;
+      color: #fff !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
     }
   </style>
 </head>
