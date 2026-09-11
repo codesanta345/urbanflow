@@ -165,9 +165,7 @@
         <h3 style="margin:0;">
           <span><i class="fa-solid fa-triangle-exclamation" style="color: #EF4444;"></i> Database Incidents</span>
         </h3>
-        <button onclick="openAddIncidentModal()" class="admin-action-btn success">
-          <i class="fa-solid fa-plus"></i> Add Fake/Test Incident
-        </button>
+        
       </div>
 
       <div id="adminIncidentsContainer" style="display:flex; flex-direction:column; gap:10px; max-height: 600px; overflow-y:auto; padding-right:4px;">
@@ -178,51 +176,15 @@
     </div>
   </main>
 
-  <!-- ADD INCIDENT MODAL -->
-  <div class="modal-backdrop" id="addIncidentModal">
-    <div class="admin-modal">
-      <h3 style="margin-top:0; border-bottom:1px solid #E2E8F0; padding-bottom:10px; margin-bottom:16px;">
-        <i class="fa-solid fa-triangle-exclamation" style="color:#EF4444;"></i> Broadcast New Incident
-      </h3>
-      <form id="adminNewIncidentForm">
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Incident Type</label>
-          <select id="modalIncType" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-            <option value="Vehicle Accident">Vehicle Accident</option>
-            <option value="Road Closure">Road Closure</option>
-            <option value="Traffic Signal Failure">Traffic Signal Failure</option>
-          </select>
-        </div>
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Location / Road Name</label>
-          <input type="text" id="modalIncRoad" placeholder="e.g. Bypass Junction" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-        </div>
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Severity Level</label>
-          <select id="modalIncSeverity" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-            <option value="Minor">Minor Delay</option>
-            <option value="Major">Major Delay</option>
-            <option value="Critical">Critical (Road Blocked)</option>
-          </select>
-        </div>
-        <div class="input-group" style="margin-bottom:16px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Description</label>
-          <textarea id="modalIncDesc" rows="3" placeholder="Provide details..." style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;" required></textarea>
-        </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" onclick="closeModals()" class="admin-action-btn" style="background:#64748B;">Cancel</button>
-          <button type="submit" class="admin-action-btn success"><i class="fa-solid fa-satellite-dish"></i> Broadcast</button>
-        </div>
-      </form>
-    </div>
-  </div>
+  
 
   <script src="data.js"></script>
   <script src="script.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       fetchIncidentsFromDB();
-      setupModalListeners();
+      // Auto-refresh for real-time tracking
+      setInterval(fetchIncidentsFromDB, 5000);
     });
 
     let liveIncidents = [];
@@ -239,7 +201,7 @@
 
     async function fetchIncidentsFromDB() {
       const container = document.getElementById('adminIncidentsContainer');
-      container.innerHTML = '<div style="text-align:center; padding:20px; color:#64748B;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching incidents...</div>';
+      if (liveIncidents.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px; color:#64748B;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching incidents...</div>';
       
       try {
         const res = await fetch('/api/incidents');
@@ -325,50 +287,9 @@
       fetchIncidentsFromDB();
     }
 
-    function openAddIncidentModal() {
-      document.getElementById('addIncidentModal').classList.add('open');
-    }
+    
 
-    function closeModals() {
-      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
-    }
-
-    function setupModalListeners() {
-      document.getElementById('adminNewIncidentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const type = document.getElementById('modalIncType').value;
-        const road = document.getElementById('modalIncRoad').value.trim();
-        const severity = document.getElementById('modalIncSeverity').value;
-        const description = document.getElementById('modalIncDesc').value.trim();
-
-        const payload = {
-          title: `${type} at ${road}`,
-          type,
-          road,
-          severity,
-          description,
-          reportedBy: 'Central Admin',
-          status: 'Verified',
-          delayImpact: severity === 'Critical' ? '+15 min delay' : '+6 min delay'
-        };
-
-        try {
-          await fetch('/api/incidents', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          showToast('Saved to MongoDB', 'New incident added to DB.');
-        } catch (err) {
-          window.UrbanFlowData.addIncident(payload);
-          showToast('Added to feed', 'Saved in local buffer.');
-        }
-
-        closeModals();
-        document.getElementById('adminNewIncidentForm').reset();
-        fetchIncidentsFromDB();
-      });
-    }
+    
 
     function escapeHtml(str) {
       return (str || '').replace(/[&<>'"]/g,

@@ -24,14 +24,6 @@ const UrbanFlowData = (() => {
    */
   const ROLE_DIRECTORY = [
     {
-      role: 'traffic_manager',
-      roleTitle: 'Traffic Authority Officer',
-      displayName: 'Agrim Bhatt',
-      accessLevel: 'Traffic Manager',
-      permissions: 'Adaptive signal adjustments, manual overrides, incident verification',
-      aliases: ['agrim', 'agrim bhatt', 'abhatt']
-    },
-    {
       role: 'admin',
       roleTitle: 'System Administrator',
       displayName: 'Shruti',
@@ -466,7 +458,7 @@ const UrbanFlowData = (() => {
     const session = {
       username: cleanUsername,
       role: profile.role,
-      displayName: identity.displayName,
+      displayName: identity.displayName || cleanUsername,
       roleTitle: profile.roleTitle,
       accessLevel: profile.accessLevel,
       permissions: profile.permissions,
@@ -476,6 +468,20 @@ const UrbanFlowData = (() => {
 
     setCurrentUser(session);
     markLoginToast();
+
+    // Log user to database so Admin can track logins
+    fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        displayName: session.displayName,
+        role: session.role,
+        roleTitle: session.roleTitle,
+        accessLevel: session.accessLevel,
+        permissions: session.permissions
+      })
+    }).catch(e => console.warn('Could not log user to DB', e));
+
     return { success: true, user: session };
   }
 

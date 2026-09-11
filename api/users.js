@@ -10,33 +10,6 @@ const SEED_USERS = [
     permissions: 'Complete infrastructure access, user management, ML model retraining',
     status: 'Active',
     createdAt: new Date().toISOString()
-  },
-  {
-    displayName: 'Agrim Bhatt',
-    role: 'traffic_manager',
-    roleTitle: 'Traffic Authority Officer',
-    accessLevel: 'Traffic Manager',
-    permissions: 'Adaptive signal adjustments, manual overrides, incident verification',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    displayName: 'Patiala Central Control',
-    role: 'traffic_manager',
-    roleTitle: 'Dispatch Operator',
-    accessLevel: 'Traffic Manager',
-    permissions: 'Emergency corridor routing, live alert broadcasting',
-    status: 'Active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    displayName: 'Simranjeet Singh',
-    role: 'user',
-    roleTitle: 'Commuter / Citizen',
-    accessLevel: 'Standard User',
-    permissions: 'Route planning, traffic map viewing, incident reporting',
-    status: 'Active',
-    createdAt: new Date().toISOString()
   }
 ];
 
@@ -59,6 +32,9 @@ module.exports = async function handler(req, res) {
     const collection = db.collection('users');
 
     if (req.method === 'GET') {
+      // Auto-cleanup legacy seeded users for the new requirement
+      await collection.deleteMany({ displayName: { $in: ['Agrim Bhatt', 'Patiala Central Control', 'Simranjeet Singh'] } });
+
       let users = await collection.find({}).toArray();
       if (users.length === 0) {
         await collection.insertMany(SEED_USERS);
