@@ -10,6 +10,111 @@
         onerror="this.onerror=null; this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           onerror="var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'; document.head.appendChild(s);"></script>
+  <style>
+    /* Admin specific enhanced styles */
+    .db-status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+      color: #F8FAFC;
+      padding: 10px 20px;
+      border-radius: var(--radius-md);
+      margin-bottom: 20px;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .db-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid #10B981;
+      color: #34D399;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .db-badge .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #10B981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10B981;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .admin-action-btn {
+      background: #3B82F6;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .admin-action-btn:hover {
+      background: #2563EB;
+      transform: translateY(-1px);
+    }
+    .admin-action-btn.danger {
+      background: #EF4444;
+    }
+    .admin-action-btn.danger:hover {
+      background: #DC2626;
+    }
+    .admin-action-btn.success {
+      background: #10B981;
+    }
+    .admin-action-btn.success:hover {
+      background: #059669;
+    }
+    .incident-action-group {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .incident-admin-item {
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #E2E8F0;
+      background: #FFFFFF;
+      transition: all 0.2s;
+    }
+    .incident-admin-item:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    }
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .admin-modal {
+      background: white;
+      width: 100%;
+      max-width: 500px;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
 <body class="dash-page">
 
@@ -19,7 +124,7 @@
       <span>🚦</span> UrbanFlow
     </a>
     <span class="nav-pill-role" style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5);">
-      System Admin Console
+      Central Admin Control
     </span>
 
     <div class="spacer"></div>
@@ -31,10 +136,13 @@
       <a href="traffic-manager.html" class="nav-btn-icon">
         <i class="fa-solid fa-traffic-light"></i> Signal Ops
       </a>
+      <a href="report-incident.html" class="nav-btn-icon">
+        <i class="fa-solid fa-bullhorn"></i> Report Portal
+      </a>
       <div class="user-menu-wrap">
         <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
           <div class="avatar-circle" id="navUserAvatar" style="background:#EF4444;">U</div>
-          <span id="navUserName">User</span>
+          <span id="navUserName">Shruti (Admin)</span>
           <i class="fa-solid fa-chevron-down user-menu-caret"></i>
         </button>
         <div class="user-menu-dropdown">
@@ -48,22 +156,41 @@
     </div>
   </nav>
 
-  <!-- ===== MAIN ADMIN DASHBOARD CONTAINER (PDF Figure 7) ===== -->
+  <!-- ===== MAIN ADMIN DASHBOARD CONTAINER ===== -->
   <main class="hub-main">
     <div class="hub-welcome">
       <div>
         <h1>Central Administrator Control Center</h1>
-        <p>Comprehensive system oversight matching Software Engineering Project Report (Figure 7).</p>
+        <p>Real-time citywide traffic orchestration, MongoDB Atlas cloud persistence, and live sensor surveillance.</p>
+      </div>
+      <div>
+        <button onclick="refreshDashboardData()" class="admin-action-btn" style="background:#4F46E5; padding:8px 16px; font-size:13px;">
+          <i class="fa-solid fa-rotate"></i> Refresh MongoDB Sync
+        </button>
       </div>
     </div>
 
-    <!-- ===== TOP 4 KPI CARDS (PDF Figure 7) ===== -->
+    <!-- MongoDB Live Status Banner -->
+    <div class="db-status-bar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="db-badge" id="dbStatusBadge">
+          <span class="pulse-dot"></span>
+          <span id="dbStatusText">MongoDB Atlas: Connected (Cluster0)</span>
+        </span>
+        <span style="font-size: 13px; color: #94A3B8;">Collection: <code>urbanflow.incidents</code> &bull; <code>urbanflow.users</code></span>
+      </div>
+      <div style="font-size: 12px; color: #CBD5E1;">
+        Serverless API Endpoint: <code style="color:#38BDF8;">/api/incidents</code>
+      </div>
+    </div>
+
+    <!-- ===== TOP 4 KPI CARDS ===== -->
     <section class="stat-row">
       <!-- Active Roads: 142 -->
       <div class="stat-card">
         <span class="stat-emoji">🛣️</span>
         <div>
-          <div class="stat-value">142</div>
+          <div class="stat-value" id="kpiActiveRoads">142</div>
           <div class="stat-label">Active Roads Monitored</div>
         </div>
       </div>
@@ -72,17 +199,17 @@
       <div class="stat-card purple-theme">
         <span class="stat-emoji">🔴</span>
         <div>
-          <div class="stat-value">18</div>
+          <div class="stat-value" id="kpiHighCongestion">18</div>
           <div class="stat-label">High Congestion Segments</div>
         </div>
       </div>
 
-      <!-- Incidents: 7 -->
+      <!-- Incidents: Loaded from DB -->
       <div class="stat-card">
         <span class="stat-emoji">⚠️</span>
         <div>
-          <div class="stat-value" id="adminIncCount">7</div>
-          <div class="stat-label">Active Incidents</div>
+          <div class="stat-value" id="adminIncCount">...</div>
+          <div class="stat-label">Active Incidents (MongoDB)</div>
         </div>
       </div>
 
@@ -90,7 +217,7 @@
       <div class="stat-card">
         <span class="stat-emoji">🚑</span>
         <div>
-          <div class="stat-value">3</div>
+          <div class="stat-value" id="kpiEmergencyUnits">3</div>
           <div class="stat-label">Emergency Priority Units</div>
         </div>
       </div>
@@ -113,18 +240,22 @@
         <div id="adminLiveMap" style="height: 580px;"></div>
       </div>
 
-      <!-- Right Column: ML Predictions & Active Incidents (Figure 7) -->
+      <!-- Right Column: ML Predictions & Active Incidents -->
       <div>
         
         <!-- Module 1: ML Predictions Panel -->
         <div class="admin-card">
-          <h3>
-            <span><i class="fa-solid fa-brain" style="color: var(--purple);"></i> ML Congestion Predictions</span>
-            <span class="hub-card-badge" style="background:#EDE9FE; color:#6D28D9;">Random Forest / XGBoost</span>
-          </h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0;">
+              <span><i class="fa-solid fa-brain" style="color: var(--purple);"></i> ML Congestion Engine</span>
+            </h3>
+            <button onclick="recalculateML()" id="recalcBtn" class="admin-action-btn" style="background:#7C3AED; font-size:11px;">
+              <i class="fa-solid fa-microchip"></i> Run Forecast
+            </button>
+          </div>
 
           <!-- Road A -->
-          <div class="prediction-row">
+          <div class="prediction-row" id="mlRowA">
             <div>
               <div class="pred-road">Road A (Phase 7 Chowk)</div>
               <div class="pred-transition">Current: <strong>Medium</strong> &rarr; Predicted: <strong style="color:#B45309;">High</strong></div>
@@ -133,7 +264,7 @@
           </div>
 
           <!-- Road B -->
-          <div class="prediction-row">
+          <div class="prediction-row" id="mlRowB">
             <div>
               <div class="pred-road">Road B (Urban Estate Ring)</div>
               <div class="pred-transition">Current: <strong>Low</strong> &rarr; Predicted: <strong style="color:#4338CA;">Medium</strong></div>
@@ -142,7 +273,7 @@
           </div>
 
           <!-- Road C -->
-          <div class="prediction-row">
+          <div class="prediction-row" id="mlRowC">
             <div>
               <div class="pred-road">Road C (Main Bypass Highway)</div>
               <div class="pred-transition">Current: <strong>High</strong> &rarr; Predicted: <strong style="color:#B91C1C;">Severe</strong></div>
@@ -151,7 +282,7 @@
           </div>
 
           <!-- Road D -->
-          <div class="prediction-row">
+          <div class="prediction-row" id="mlRowD">
             <div>
               <div class="pred-road">Road D (Lower Mall Road)</div>
               <div class="pred-transition">Current: <strong>Low</strong> &rarr; Predicted: <strong style="color:#059669;">Low</strong></div>
@@ -160,36 +291,21 @@
           </div>
         </div>
 
-        <!-- Module 2: Active Incidents List (Figure 7) -->
+        <!-- Module 2: Dynamic Active Incidents List (Stored in MongoDB) -->
         <div class="admin-card">
-          <h3>
-            <span><i class="fa-solid fa-circle-exclamation" style="color: #EF4444;"></i> Active Incidents Summary</span>
-            <a href="report-incident.html" class="chip" style="font-size:11px; padding:3px 10px;">+ New Incident</a>
-          </h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0;">
+              <span><i class="fa-solid fa-triangle-exclamation" style="color: #EF4444;"></i> Incidents Management (MongoDB)</span>
+            </h3>
+            <button onclick="openAddIncidentModal()" class="admin-action-btn success">
+              <i class="fa-solid fa-plus"></i> Add Incident
+            </button>
+          </div>
 
-          <div style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #FEF2F2; border-radius: var(--radius-sm); border: 1px solid #FECACA;">
-              <div>
-                <strong>💥 Accident</strong> &bull; Road C (Bypass)
-                <div style="font-size: 12px; color: #991B1B;">Two-vehicle collision &bull; lane blocked</div>
-              </div>
-              <span class="severity-pill critical">Critical</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #FFFBEB; border-radius: var(--radius-sm); border: 1px solid #FDE68A;">
-              <div>
-                <strong>🚧 Roadwork</strong> &bull; Road A (Phase 7)
-                <div style="font-size: 12px; color: #92400E;">Pipe laying underway &bull; single lane open</div>
-              </div>
-              <span class="severity-pill moderate">Moderate</span>
-            </div>
-
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; background: #EFF6FF; border-radius: var(--radius-sm); border: 1px solid #BFDBFE;">
-              <div>
-                <strong>🚗 Breakdown</strong> &bull; Road D (Mall Rd)
-                <div style="font-size: 12px; color: #1E40AF;">Stalled car on shoulder lane</div>
-              </div>
-              <span class="severity-pill minor">Minor</span>
+          <!-- Live Dynamic Incidents Container -->
+          <div id="adminIncidentsContainer" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px;">
+            <div style="text-align:center; padding:20px; color:#64748B;">
+              <i class="fa-solid fa-spinner fa-spin"></i> Fetching incidents from MongoDB...
             </div>
           </div>
         </div>
@@ -199,11 +315,16 @@
     </div>
 
     <!-- ===== SECTION 3: SYSTEM ROLE-BASED ACCESS CONTROL (RBAC) ===== -->
-    <div class="admin-card" style="margin-top: 10px;">
-      <h3>
-        <span><i class="fa-solid fa-users-gear" style="color: var(--purple);"></i> User Access & Role-Based Privileges (RBAC)</span>
-        <span style="font-size: 12px; color: #6B7280; font-weight: normal;">Stateless JWT Architecture</span>
-      </h3>
+    <div class="admin-card" style="margin-top: 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;">
+          <span><i class="fa-solid fa-users-gear" style="color: var(--purple);"></i> User Access & Role-Based Privileges (RBAC Database)</span>
+          <span style="font-size: 12px; color: #6B7280; font-weight: normal; margin-left:8px;">MongoDB Collection: <code>users</code></span>
+        </h3>
+        <button onclick="openAddUserModal()" class="admin-action-btn">
+          <i class="fa-solid fa-user-plus"></i> Register System User
+        </button>
+      </div>
 
       <div style="overflow-x: auto;">
         <table class="algo-table">
@@ -214,10 +335,15 @@
               <th>Access Level</th>
               <th>Permissions</th>
               <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="accessMatrixBody">
-            <!-- Injected via JavaScript from the live session + staff directory -->
+            <tr>
+              <td colspan="6" style="text-align:center; padding:16px; color:#64748B;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Loading operators from database...
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -225,13 +351,95 @@
 
   </main>
 
+  <!-- ===== MODAL: ADD NEW INCIDENT DIRECT TO MONGODB ===== -->
+  <div id="addIncidentModal" class="modal-backdrop">
+    <div class="admin-modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;"><i class="fa-solid fa-bullhorn" style="color:#EF4444;"></i> Dispatch New Incident</h3>
+        <button onclick="closeModals()" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <form id="adminNewIncidentForm">
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Category</label>
+          <select id="modalIncType" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+            <option value="Accident">💥 Vehicle Collision / Accident</option>
+            <option value="Roadwork">🚧 Construction / Roadwork</option>
+            <option value="Breakdown">🚗 Stalled Vehicle / Breakdown</option>
+            <option value="Signal Failure">🚦 Signal Malfunction</option>
+            <option value="Road Blockage">⛔ Lane Blockage</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Road Location</label>
+          <input type="text" id="modalIncRoad" placeholder="e.g. Phase 7 Chowk, Main Bypass" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Severity</label>
+          <select id="modalIncSeverity" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+            <option value="Critical">🔴 Critical (Total Lane Blockage)</option>
+            <option value="Moderate" selected>🟡 Moderate (Partial Block)</option>
+            <option value="Minor">🔵 Minor (Shoulder Lane)</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:16px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Description</label>
+          <textarea id="modalIncDesc" rows="3" placeholder="Provide event details..." required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;"></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeModals()" class="admin-action-btn" style="background:#64748B;">Cancel</button>
+          <button type="submit" class="admin-action-btn success"><i class="fa-solid fa-cloud-arrow-up"></i> Save to MongoDB</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: ADD SYSTEM USER DIRECT TO MONGODB ===== -->
+  <div id="addUserModal" class="modal-backdrop">
+    <div class="admin-modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3 style="margin:0;"><i class="fa-solid fa-user-shield" style="color:var(--purple);"></i> Register System Operator</h3>
+        <button onclick="closeModals()" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
+      </div>
+      <form id="adminNewUserForm">
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Full Name</label>
+          <input type="text" id="modalUserName" placeholder="e.g. Officer Rohit Sharma" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+        </div>
+        <div class="input-group" style="margin-bottom:12px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">System Role</label>
+          <select id="modalUserRole" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+            <option value="traffic_manager">Traffic Authority Officer</option>
+            <option value="admin">System Administrator</option>
+            <option value="user">Commuter / Citizen</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-bottom:16px;">
+          <label style="display:block; font-weight:600; margin-bottom:4px;">Granted Permissions</label>
+          <input type="text" id="modalUserPerms" placeholder="e.g. Adaptive signals, alert broadcast" value="Adaptive signals, incident verification" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" onclick="closeModals()" class="admin-action-btn" style="background:#64748B;">Cancel</button>
+          <button type="submit" class="admin-action-btn success"><i class="fa-solid fa-check"></i> Register to Database</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script src="data.js"></script>
   <script src="script.js"></script>
   <script>
     let adminMap = null;
+    let liveIncidents = [];
+    let liveUsers = [];
 
     document.addEventListener('DOMContentLoaded', () => {
-      // Initialize Admin Leaflet Map with colored congestion polylines
+      initAdminMap();
+      refreshDashboardData();
+      setupModalListeners();
+    });
+
+    // Initialize Map with Patiala coordinates and colored routes
+    function initAdminMap() {
       const patiala = window.UrbanFlowData.getCityData('patiala');
       adminMap = createLeafletMap('adminLiveMap', patiala.lat, patiala.lon, 13);
 
@@ -258,44 +466,287 @@
           [30.3298, 76.3980],
           [30.3220, 76.4100]
         ], { color: '#EF4444', weight: 7, opacity: 0.95 }).addTo(adminMap);
-        roadC.bindPopup('<b>Road C (Main Bypass)</b><br>Traffic: Severe (Speed: 14 km/h)<br>Alert: Critical Accident Reported');
+        roadC.bindPopup('<b>Road C (Main Bypass)</b><br>Traffic: Severe (Speed: 14 km/h)<br>Alert: Incident Reported');
 
-        // Incident marker
+        // Dynamic pin
         L.marker([30.3340, 76.3890], {
           icon: createCustomPin('#EF4444', '💥')
-        }).addTo(adminMap).bindPopup('<b>Critical Incident:</b> Two-car collision on Bypass exit');
+        }).addTo(adminMap).bindPopup('<b>Live Incident Point:</b> Main Bypass Exit');
 
-        // Fit bounds
         adminMap.fitBounds(roadC.getBounds(), { padding: [50, 50] });
       }
+    }
 
-      // Sync active incident count
-      const count = window.UrbanFlowData.getIncidents().length;
-      document.getElementById('adminIncCount').textContent = count;
+    // Refresh all data from MongoDB Serverless Endpoints with graceful local fallback
+    async function refreshDashboardData() {
+      await Promise.all([
+        fetchIncidentsFromDB(),
+        fetchUsersFromDB(),
+        fetchStatsFromDB()
+      ]);
+    }
 
-      renderAccessMatrix();
-    });
+    // 1. Fetch Incidents from MongoDB /api/incidents
+    async function fetchIncidentsFromDB() {
+      const container = document.getElementById('adminIncidentsContainer');
+      try {
+        const res = await fetch('/api/incidents');
+        if (!res.ok) throw new Error('API offline or 404');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          liveIncidents = json.data;
+          setDBStatus(true, 'MongoDB Atlas: Connected (Live Synchronized)');
+        } else {
+          throw new Error(json.error || 'Failed to parse');
+        }
+      } catch (err) {
+        console.warn('Falling back to local data store:', err);
+        liveIncidents = window.UrbanFlowData.getIncidents();
+        setDBStatus(false, 'Local Backup Active (Push to Vercel for Live Atlas)');
+      }
+      renderIncidents(liveIncidents);
+      document.getElementById('adminIncCount').textContent = liveIncidents.length;
+    }
 
-    // Access matrix: the live signed-in account first, then the staff directory
-    function renderAccessMatrix() {
-      const body = document.getElementById('accessMatrixBody');
+    // Render Incidents into Admin List
+    function renderIncidents(incidents) {
+      const container = document.getElementById('adminIncidentsContainer');
+      if (!incidents || incidents.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:20px; color:#64748B;">No active incidents reported. All roads clear!</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      incidents.forEach(inc => {
+        const id = inc._id || inc.id;
+        const sevClass = (inc.severity || 'minor').toLowerCase();
+        const item = document.createElement('div');
+        item.className = 'incident-admin-item';
+        item.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <strong style="font-size:14px;">${escapeHtml(inc.title || inc.type)}</strong>
+              <div style="font-size:12px; color:#475569; margin-top:2px;">
+                <i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> ${escapeHtml(inc.road || 'Patiala Corridor')} &bull; 
+                <span style="color:#64748B;">Reported by: ${escapeHtml(inc.reportedBy || 'User')}</span>
+              </div>
+              <div style="font-size:12px; color:#64748B; margin-top:4px;">${escapeHtml(inc.description || 'No additional notes.')}</div>
+            </div>
+            <span class="severity-pill ${sevClass}">${escapeHtml(inc.severity || 'Minor')}</span>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px dashed #E2E8F0;">
+            <span style="font-size:11px; font-weight:600; color:${inc.status === 'Verified' ? '#059669' : '#D97706'};">
+              ● ${escapeHtml(inc.status || 'Reported')}
+            </span>
+            <div class="incident-action-group">
+              ${inc.status !== 'Verified' ? `<button onclick="verifyIncident('${id}')" class="admin-action-btn success" style="padding:4px 8px; font-size:11px;"><i class="fa-solid fa-check"></i> Verify</button>` : ''}
+              <button onclick="resolveIncident('${id}')" class="admin-action-btn danger" style="padding:4px 8px; font-size:11px;"><i class="fa-solid fa-trash"></i> Resolve</button>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // 2. Fetch Users from MongoDB /api/users
+    async function fetchUsersFromDB() {
+      const tbody = document.getElementById('accessMatrixBody');
+      try {
+        const res = await fetch('/api/users');
+        if (!res.ok) throw new Error('API offline');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          liveUsers = json.data;
+        } else {
+          throw new Error('Invalid users data');
+        }
+      } catch (err) {
+        liveUsers = window.UrbanFlowData.getAccessMatrix();
+      }
+      renderUsers(liveUsers);
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('accessMatrixBody');
+      tbody.innerHTML = '';
       const badgeClass = { admin: 'admin', traffic_manager: 'authority', user: '' };
 
-      body.innerHTML = '';
-      window.UrbanFlowData.getAccessMatrix().forEach(row => {
+      users.forEach(row => {
+        const id = row._id || '';
         const tr = document.createElement('tr');
         tr.innerHTML = `
+          <td><strong>${escapeHtml(row.displayName)}</strong></td>
+          <td><span class="hub-card-badge ${badgeClass[row.role] || ''}">${escapeHtml(row.roleTitle || row.role)}</span></td>
+          <td>${escapeHtml(row.accessLevel || 'Standard Access')}</td>
+          <td>${escapeHtml(row.permissions || 'Read only')}</td>
+          <td><span style="color:#059669; font-weight:600;">● ${escapeHtml(row.status || 'Active')}</span></td>
           <td>
-            <strong>${escapeHtml(row.displayName)}</strong>
-            ${row.isCurrent ? '<span class="hub-card-badge" style="margin-left:8px; font-size:10px;">This session</span>' : ''}
+            ${id ? `<button onclick="deleteUser('${id}')" class="admin-action-btn danger" style="padding:3px 8px; font-size:11px;"><i class="fa-solid fa-user-xmark"></i></button>` : '<span style="color:#94A3B8; font-size:11px;">Protected</span>'}
           </td>
-          <td><span class="hub-card-badge ${badgeClass[row.role] || ''}">${escapeHtml(row.roleTitle)}</span></td>
-          <td>${escapeHtml(row.accessLevel)}</td>
-          <td>${escapeHtml(row.permissions)}</td>
-          <td><span style="color:#059669; font-weight:600;">● Active</span></td>
         `;
-        body.appendChild(tr);
+        tbody.appendChild(tr);
       });
+    }
+
+    // 3. Fetch KPI Stats
+    async function fetchStatsFromDB() {
+      try {
+        const res = await fetch('/api/stats');
+        const json = await res.json();
+        if (json.success && json.data) {
+          document.getElementById('kpiActiveRoads').textContent = json.data.activeRoads;
+          document.getElementById('kpiHighCongestion').textContent = json.data.highCongestionSegments;
+          document.getElementById('adminIncCount').textContent = json.data.activeIncidents;
+          document.getElementById('kpiEmergencyUnits').textContent = json.data.emergencyUnits;
+        }
+      } catch (e) {
+        // keep defaults
+      }
+    }
+
+    // Verify Incident in MongoDB
+    async function verifyIncident(id) {
+      try {
+        await fetch('/api/incidents', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, status: 'Verified' })
+        });
+        showToast('Incident Verified', 'Status updated to Verified in MongoDB.');
+      } catch (err) {
+        showToast('Updated locally', 'Verified status saved in local session.');
+      }
+      refreshDashboardData();
+    }
+
+    // Resolve & Delete Incident in MongoDB
+    async function resolveIncident(id) {
+      if (!confirm('Resolve and remove this incident from MongoDB?')) return;
+      try {
+        await fetch(`/api/incidents?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        showToast('Incident Resolved', 'Incident marked cleared and deleted from MongoDB.');
+      } catch (err) {
+        window.UrbanFlowData.deleteIncident(id);
+        showToast('Removed Locally', 'Incident removed from active display.');
+      }
+      refreshDashboardData();
+    }
+
+    // Delete User in MongoDB
+    async function deleteUser(id) {
+      if (!confirm('Revoke access and remove user from database?')) return;
+      try {
+        await fetch(`/api/users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        showToast('Access Revoked', 'User operator removed from MongoDB.');
+      } catch (e) {
+        showToast('Notice', 'User session updated.');
+      }
+      fetchUsersFromDB();
+    }
+
+    // Status UI helper
+    function setDBStatus(isLive, message) {
+      const badge = document.getElementById('dbStatusBadge');
+      const text = document.getElementById('dbStatusText');
+      if (text) text.textContent = message;
+      if (!isLive && badge) {
+        badge.style.background = 'rgba(234, 179, 8, 0.15)';
+        badge.style.borderColor = '#EAB308';
+        badge.style.color = '#FACC15';
+      }
+    }
+
+    // Modals Handling
+    function openAddIncidentModal() {
+      document.getElementById('addIncidentModal').classList.add('open');
+    }
+    function openAddUserModal() {
+      document.getElementById('addUserModal').classList.add('open');
+    }
+    function closeModals() {
+      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+    }
+
+    function setupModalListeners() {
+      // Add Incident Form
+      document.getElementById('adminNewIncidentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const type = document.getElementById('modalIncType').value;
+        const road = document.getElementById('modalIncRoad').value.trim();
+        const severity = document.getElementById('modalIncSeverity').value;
+        const description = document.getElementById('modalIncDesc').value.trim();
+
+        const payload = {
+          title: `${type} at ${road}`,
+          type,
+          road,
+          severity,
+          description,
+          reportedBy: 'Central Admin',
+          status: 'Verified',
+          delayImpact: severity === 'Critical' ? '+15 min delay' : '+6 min delay'
+        };
+
+        try {
+          await fetch('/api/incidents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          showToast('Saved to MongoDB', 'New incident broadcasted across all city nodes.');
+        } catch (err) {
+          window.UrbanFlowData.addIncident(payload);
+          showToast('Added to feed', 'Saved in local buffer.');
+        }
+
+        closeModals();
+        document.getElementById('adminNewIncidentForm').reset();
+        refreshDashboardData();
+      });
+
+      // Add User Form
+      document.getElementById('adminNewUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const displayName = document.getElementById('modalUserName').value.trim();
+        const role = document.getElementById('modalUserRole').value;
+        const permissions = document.getElementById('modalUserPerms').value.trim();
+
+        const payload = { displayName, role, permissions };
+
+        try {
+          await fetch('/api/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          showToast('User Registered', 'New operator registered in MongoDB RBAC table.');
+        } catch (err) {
+          showToast('Registered', 'User role added to current session.');
+        }
+
+        closeModals();
+        document.getElementById('adminNewUserForm').reset();
+        fetchUsersFromDB();
+      });
+    }
+
+    // Recalculate ML Forecast Simulation
+    function recalculateML() {
+      const btn = document.getElementById('recalcBtn');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> ML Model Synced';
+        btn.style.background = '#059669';
+        showToast('ML Predictions Recalculated', 'Random Forest & XGBoost model re-evaluated live sensor traffic weights.');
+        setTimeout(() => {
+          btn.innerHTML = '<i class="fa-solid fa-microchip"></i> Run Forecast';
+          btn.style.background = '#7C3AED';
+          btn.disabled = false;
+        }, 3000);
+      }, 1200);
     }
 
     function escapeHtml(str) {

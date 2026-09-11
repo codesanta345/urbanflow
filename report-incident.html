@@ -127,7 +127,7 @@
         emptyText: 'No known location matches — type the road name yourself'
       });
 
-      document.getElementById('incidentForm').addEventListener('submit', (e) => {
+      document.getElementById('incidentForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const type = document.getElementById('incType').value;
         const road = document.getElementById('incRoad').value.trim();
@@ -146,8 +146,18 @@
           delayImpact: severity === 'Critical' ? '+15 min delay' : '+5 min delay'
         };
 
+        try {
+          await fetch('/api/incidents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newIncident)
+          });
+        } catch (err) {
+          console.warn('MongoDB API offline, saving locally:', err);
+        }
+
         window.UrbanFlowData.addIncident(newIncident);
-        showToast('Report Submitted!', 'Your incident report has been logged and sent to the traffic authority.');
+        showToast('Report Submitted!', 'Your incident report has been logged and sent to MongoDB & the traffic authority.');
 
         // Reset form
         document.getElementById('incidentForm').reset();
