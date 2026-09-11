@@ -105,8 +105,17 @@
   <script>
     // Role-specific distinct features catalog
     const ROLE_FEATURES = {
-      // 1. COMMUTER / DRIVER FEATURES (USER ONLY)
+      // 1. COMMUTER / DRIVER FEATURES
       'user': [
+        {
+          icon: '🛰️',
+          badge: 'Live Radar',
+          badgeClass: '',
+          title: 'Live City Traffic Radar',
+          desc: 'Search any city to view live road congestion maps with heavy traffic in Red and moderate traffic in Blue, plus speed analytics.',
+          actionText: 'Explore Traffic Radar',
+          link: 'admin.html'
+        },
         {
           icon: '🗺️',
           badge: 'Navigation',
@@ -136,14 +145,23 @@
         }
       ],
 
-      // 2. TRAFFIC AUTHORITY / MANAGER FEATURES (TRAFFIC MANAGER ONLY)
+      // 2. TRAFFIC AUTHORITY / MANAGER FEATURES
       'traffic_manager': [
+        {
+          icon: '🛰️',
+          badge: 'Live Radar',
+          badgeClass: 'authority',
+          title: 'Live City Traffic Radar',
+          desc: 'Search any city to monitor real road networks with high-congestion corridors in Red and moderate segments in Blue.',
+          actionText: 'Launch Traffic Radar',
+          link: 'admin.html'
+        },
         {
           icon: '🚦',
           badge: 'Traffic Authority',
           badgeClass: 'authority',
           title: 'Smart Traffic Signal Control',
-          desc: 'Adjust signal timings dynamically across 4 approaches (North 800, East 200, South 650, West 150) to eliminate queue backups in real time.',
+          desc: 'Adjust signal timings dynamically across 4 approaches to balance vehicle queues and eliminate backups in real time.',
           actionText: 'Open Signal Controller',
           link: 'traffic-manager.html'
         },
@@ -152,7 +170,7 @@
           badge: 'Operations Desk',
           badgeClass: 'authority',
           title: 'Incident Verification Center',
-          desc: 'Review citizen incident submissions, verify severity, deploy road recovery units, and broadcast updates to navigation algorithms.',
+          desc: 'Review citizen incident submissions, verify severity, deploy road recovery units, and broadcast updates to drivers.',
           actionText: 'Review Incidents Queue',
           link: 'traffic-manager.html#incidents-queue'
         },
@@ -167,43 +185,34 @@
         }
       ],
 
-      // 3. SYSTEM ADMINISTRATOR FEATURES (ADMIN ONLY)
+      // 3. SYSTEM ADMINISTRATOR FEATURES
       'admin': [
         {
-          icon: '⚙️',
-          badge: 'Admin Command',
+          icon: '🛰️',
+          badge: 'Featured Radar',
           badgeClass: 'admin',
-          title: 'Central Infrastructure Control',
-          desc: 'Master dashboard oversight matching PDF Figure 7: 142 active roads, 18 high congestion segments, 7 incidents, and emergency vehicles.',
-          actionText: 'Launch Admin Console',
-          link: 'admin.html'
-        },
-        {
-          icon: '🧠',
-          badge: 'AI / ML Engine',
-          badgeClass: 'admin',
-          title: 'ML Prediction & Retraining Engine',
-          desc: 'Monitor ML model accuracy (87%), evaluate congestion forecast metrics (Road A, B, C, D), and tune tree weights.',
-          actionText: 'Inspect ML Models',
-          link: 'admin.html'
-        },
-        {
-          icon: '👥',
-          badge: 'Security / RBAC',
-          badgeClass: 'admin',
-          title: 'User Access & Privilege Matrix',
-          desc: 'Manage authenticated commuters, traffic operators, and system administrators with stateless token validation rules.',
-          actionText: 'Manage Access Roles',
+          title: 'Citywide Traffic Congestion Radar',
+          desc: 'Interactive citywide traffic map displaying real road networks with heavy traffic in Red, moderate in Blue, and real-time road search.',
+          actionText: 'Open Traffic Radar',
           link: 'admin.html'
         },
         {
           icon: '🚦',
-          badge: 'Signal Override',
+          badge: 'Signal Command',
           badgeClass: 'admin',
-          title: 'Citywide Signal Override Command',
-          desc: 'Direct supervisory access to modify intersection cycle times, trigger citywide emergency flash, and audit traffic records.',
+          title: 'Smart Signal Operations Center',
+          desc: 'Direct supervisory access to modify intersection cycle times, trigger emergency green corridors, and manage approach traffic demand.',
           actionText: 'Open Signal Controller',
           link: 'traffic-manager.html'
+        },
+        {
+          icon: '📋',
+          badge: 'Incident Operations',
+          badgeClass: 'admin',
+          title: 'Incident Verification & Management',
+          desc: 'Review citizen incident submissions, verify road collisions, and broadcast real-time warnings across the road network.',
+          actionText: 'Open Incident Queue',
+          link: 'traffic-manager.html#incidents-queue'
         }
       ]
     };
