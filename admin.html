@@ -3,116 +3,344 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | Urban Flow</title>
+  <title>Admin ML Traffic Prediction & Congestion Radar | Urban Flow</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         onerror="this.onerror=null; this.href='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           onerror="var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'; document.head.appendChild(s);"></script>
+  
   <style>
-    /* Admin specific enhanced styles */
-    .db-status-bar {
+    /* Dedicated clean styling for Admin ML Traffic Intelligence */
+    .city-search-strip {
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .city-search-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .city-input-wrap {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+    .city-input-wrap input {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid #CBD5E1;
+      font-size: 15px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .city-input-wrap input:focus {
+      outline: none;
+      border-color: #6366F1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+    .city-input-wrap i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #64748B;
+      font-size: 16px;
+    }
+    .city-presets {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-      color: #F8FAFC;
-      padding: 10px 20px;
-      border-radius: var(--radius-md);
-      margin-bottom: 20px;
-      border: 1px solid #334155;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .db-badge {
-      display: inline-flex;
-      align-items: center;
       gap: 8px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid #10B981;
-      color: #34D399;
-      padding: 4px 12px;
+      flex-wrap: wrap;
+    }
+    .city-preset-btn {
+      background: #F1F5F9;
+      color: #334155;
+      border: 1px solid #E2E8F0;
+      padding: 6px 14px;
       border-radius: 999px;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .db-badge .pulse-dot {
-      width: 8px;
-      height: 8px;
-      background: #10B981;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #10B981;
-      animation: pulse 1.5s infinite;
+    .city-preset-btn:hover {
+      background: #E2E8F0;
+      color: #0F172A;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
+    .city-preset-btn.active {
+      background: #4F46E5;
+      color: #FFFFFF;
+      border-color: #4F46E5;
     }
-    .admin-action-btn {
-      background: #3B82F6;
+    .btn-search-city {
+      background: linear-gradient(135deg, #4F46E5 0%, #4338CA 100%);
       color: white;
       border: none;
-      padding: 6px 12px;
+      padding: 12px 24px;
       border-radius: var(--radius-sm);
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s;
     }
-    .admin-action-btn:hover {
-      background: #2563EB;
+    .btn-search-city:hover {
+      opacity: 0.95;
       transform: translateY(-1px);
     }
-    .admin-action-btn.danger {
-      background: #EF4444;
+
+    /* 4 Focused KPI Cards */
+    .traffic-kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
     }
-    .admin-action-btn.danger:hover {
-      background: #DC2626;
+    .traffic-kpi-card {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      border: 1px solid #E2E8F0;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
     }
-    .admin-action-btn.success {
-      background: #10B981;
+    .traffic-kpi-card.heavy {
+      border-left: 5px solid #EF4444;
     }
-    .admin-action-btn.success:hover {
-      background: #059669;
+    .traffic-kpi-card.moderate {
+      border-left: 5px solid #2563EB;
     }
-    .incident-action-group {
+    .traffic-kpi-card.clear {
+      border-left: 5px solid #10B981;
+    }
+    .traffic-kpi-card.ml {
+      border-left: 5px solid #7C3AED;
+    }
+    .kpi-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .kpi-icon-box.heavy { background: #FEF2F2; color: #EF4444; }
+    .kpi-icon-box.moderate { background: #EFF6FF; color: #2563EB; }
+    .kpi-icon-box.clear { background: #ECFDF5; color: #10B981; }
+    .kpi-icon-box.ml { background: #F5F3FF; color: #7C3AED; }
+
+    /* Map & Side Panel Split Container */
+    .ml-traffic-container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .ml-traffic-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Map Panel */
+    .radar-map-panel {
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid #E2E8F0;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .radar-map-header {
+      padding: 14px 20px;
+      background: #0F172A;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .map-legend {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+    }
+    .legend-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .legend-dot.red { background: #EF4444; box-shadow: 0 0 8px #EF4444; }
+    .legend-dot.blue { background: #2563EB; box-shadow: 0 0 8px #2563EB; }
+    .legend-dot.green { background: #10B981; }
+
+    /* Right Side Panel: Roads Explorer */
+    .roads-side-panel {
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid #E2E8F0;
+      display: flex;
+      flex-direction: column;
+      height: 650px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .side-panel-header {
+      padding: 16px;
+      border-bottom: 1px solid #E2E8F0;
+      background: #F8FAFC;
+    }
+    .side-panel-header h3 {
+      margin: 0 0 10px 0;
+      font-size: 16px;
+      color: #0F172A;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .road-search-box {
+      position: relative;
+      margin-bottom: 10px;
+    }
+    .road-search-box input {
+      width: 100%;
+      padding: 9px 12px 9px 34px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #CBD5E1;
+      font-size: 13px;
+    }
+    .road-search-box i {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94A3B8;
+      font-size: 13px;
+    }
+    .filter-pills {
       display: flex;
       gap: 6px;
-      margin-top: 8px;
     }
-    .incident-admin-item {
+    .filter-pill {
+      flex: 1;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border: 1px solid #CBD5E1;
+      background: white;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .filter-pill.active {
+      background: #0F172A;
+      color: white;
+      border-color: #0F172A;
+    }
+    .roads-scroll-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .road-item-card {
       padding: 12px;
       border-radius: var(--radius-sm);
       border: 1px solid #E2E8F0;
       background: #FFFFFF;
+      cursor: pointer;
       transition: all 0.2s;
     }
-    .incident-admin-item:hover {
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    .road-item-card:hover {
+      border-color: #94A3B8;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      transform: translateX(2px);
     }
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 9999;
+    .road-item-card.heavy {
+      border-left: 4px solid #EF4444;
+      background: #FEF2F2;
+    }
+    .road-item-card.moderate {
+      border-left: 4px solid #2563EB;
+      background: #EFF6FF;
+    }
+    .road-item-card.clear {
+      border-left: 4px solid #10B981;
+      background: #F0FDF4;
+    }
+    .road-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .road-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1E293B;
+    }
+    .traffic-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .traffic-badge.heavy { background: #FEE2E2; color: #DC2626; }
+    .traffic-badge.moderate { background: #DBEAFE; color: #1D4ED8; }
+    .traffic-badge.clear { background: #DCFCE7; color: #15803D; }
+    
+    .road-metrics {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #475569;
+      margin-top: 4px;
+    }
+    .focus-btn {
+      margin-top: 8px;
+      width: 100%;
+      background: white;
+      border: 1px solid #CBD5E1;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      gap: 6px;
     }
-    .modal-backdrop.open {
-      display: flex;
-    }
-    .admin-modal {
-      background: white;
-      width: 100%;
-      max-width: 500px;
-      border-radius: var(--radius-md);
-      padding: 24px;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+    .focus-btn:hover {
+      background: #0F172A;
+      color: white;
+      border-color: #0F172A;
     }
   </style>
 </head>
@@ -123,8 +351,8 @@
     <a href="hub.html" class="nav-logo-link">
       <span>🚦</span> UrbanFlow
     </a>
-    <span class="nav-pill-role" style="background: rgba(239, 68, 68, 0.3); border: 1px solid rgba(239, 68, 68, 0.5);">
-      Central Admin Control
+    <span class="nav-pill-role" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color:#DC2626;">
+      Admin ML Traffic Intelligence
     </span>
 
     <div class="spacer"></div>
@@ -136,13 +364,10 @@
       <a href="traffic-manager.html" class="nav-btn-icon">
         <i class="fa-solid fa-traffic-light"></i> Signal Ops
       </a>
-      <a href="report-incident.html" class="nav-btn-icon">
-        <i class="fa-solid fa-bullhorn"></i> Report Portal
-      </a>
       <div class="user-menu-wrap">
         <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
-          <div class="avatar-circle" id="navUserAvatar" style="background:#EF4444;">U</div>
-          <span id="navUserName">Shruti (Admin)</span>
+          <div class="avatar-circle" id="navUserAvatar" style="background:#EF4444;">A</div>
+          <span id="navUserName">Admin (Shruti)</span>
           <i class="fa-solid fa-chevron-down user-menu-caret"></i>
         </button>
         <div class="user-menu-dropdown">
@@ -156,603 +381,1111 @@
     </div>
   </nav>
 
-  <!-- ===== MAIN ADMIN DASHBOARD CONTAINER ===== -->
-  <main class="hub-main">
-    <div class="hub-welcome">
+  <!-- ===== MAIN ADMIN WORKSPACE ===== -->
+  <main class="hub-main" style="max-width: 1400px;">
+    
+    <!-- Title Section -->
+    <div class="hub-welcome" style="margin-bottom: 16px;">
       <div>
-        <h1>Central Administrator Control Center</h1>
-        <p>👤 Logged in as: <strong class="active-user-name" style="color:#7C3AED;">Admin</strong> &bull; <span class="active-user-role">Administrator</span> | Real-time citywide traffic orchestration & MongoDB Atlas cloud sync.</p>
+        <h1 style="font-size:24px; color:#0F172A;">Citywide ML Traffic Prediction & Congestion Radar</h1>
+        <p>Search any city to view live ML predicted traffic overlays. <span style="color:#DC2626; font-weight:600;">Heavy Traffic shown in RED</span>, <span style="color:#2563EB; font-weight:600;">Moderate Traffic in BLUE</span>.</p>
       </div>
       <div>
-        <button onclick="refreshDashboardData()" class="admin-action-btn" style="background:#4F46E5; padding:8px 16px; font-size:13px;">
-          <i class="fa-solid fa-rotate"></i> Refresh MongoDB Sync
+        <span class="hub-card-badge admin" style="font-size:12px; padding:6px 14px;">
+          <i class="fa-solid fa-brain"></i> XGBoost / Random Forest Active
+        </span>
+      </div>
+    </div>
+
+    <!-- ===== CITY SEARCH & PRESETS BAR ===== -->
+    <section class="city-search-strip">
+      <div class="city-search-row">
+        <div class="city-input-wrap">
+          <i class="fa-solid fa-city"></i>
+          <input type="text" id="citySearchInput" placeholder="Search any city (e.g. Patiala, Chandigarh, Delhi, Ludhiana, Mumbai...)" value="Patiala">
+        </div>
+        <button onclick="handleCitySearch()" class="btn-search-city">
+          <i class="fa-solid fa-magnifying-glass"></i> Search City
         </button>
       </div>
-    </div>
-
-    <!-- MongoDB Live Status Banner -->
-    <div class="db-status-bar">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span class="db-badge" id="dbStatusBadge">
-          <span class="pulse-dot"></span>
-          <span id="dbStatusText">MongoDB Atlas: Connected (Cluster0)</span>
-        </span>
-        <span style="font-size: 13px; color: #94A3B8;">Collection: <code>urbanflow.incidents</code> &bull; <code>urbanflow.users</code></span>
+      <div class="city-presets">
+        <span style="font-size:12px; font-weight:600; color:#64748B;">Quick Select:</span>
+        <button class="city-preset-btn active" onclick="switchCity('patiala', this)">Patiala</button>
+        <button class="city-preset-btn" onclick="switchCity('chandigarh', this)">Chandigarh</button>
+        <button class="city-preset-btn" onclick="switchCity('delhi', this)">Delhi NCR</button>
+        <button class="city-preset-btn" onclick="switchCity('ludhiana', this)">Ludhiana</button>
+        <button class="city-preset-btn" onclick="switchCity('amritsar', this)">Amritsar</button>
+        <button class="city-preset-btn" onclick="switchCity('mumbai', this)">Mumbai</button>
+        <button class="city-preset-btn" onclick="switchCity('bangalore', this)">Bengaluru</button>
       </div>
-      <div style="font-size: 12px; color: #CBD5E1;">
-        Serverless API Endpoint: <code style="color:#38BDF8;">/api/incidents</code>
-      </div>
-    </div>
+    </section>
 
-    <!-- ===== TOP 4 KPI CARDS ===== -->
-    <section class="stat-row">
-      <!-- Active Roads: 142 -->
-      <div class="stat-card">
-        <span class="stat-emoji">🛣️</span>
+    <!-- ===== TOP 4 KPI CARDS FOR SELECTED CITY ===== -->
+    <section class="traffic-kpi-row">
+      <!-- Heavy Congestion (Red) -->
+      <div class="traffic-kpi-card heavy">
+        <div class="kpi-icon-box heavy">
+          <i class="fa-solid fa-traffic-light"></i>
+        </div>
         <div>
-          <div class="stat-value" id="kpiActiveRoads">142</div>
-          <div class="stat-label">Active Roads Monitored</div>
+          <div style="font-size:22px; font-weight:800; color:#DC2626;" id="countHeavy">3 Roads</div>
+          <div style="font-size:12px; color:#64748B; font-weight:600;">Heavy Congestion (Red)</div>
         </div>
       </div>
 
-      <!-- High Congestion: 18 -->
-      <div class="stat-card purple-theme">
-        <span class="stat-emoji">🔴</span>
+      <!-- Moderate Traffic (Blue) -->
+      <div class="traffic-kpi-card moderate">
+        <div class="kpi-icon-box moderate">
+          <i class="fa-solid fa-car-side"></i>
+        </div>
         <div>
-          <div class="stat-value" id="kpiHighCongestion">18</div>
-          <div class="stat-label">High Congestion Segments</div>
+          <div style="font-size:22px; font-weight:800; color:#2563EB;" id="countModerate">3 Roads</div>
+          <div style="font-size:12px; color:#64748B; font-weight:600;">Moderate Traffic (Blue)</div>
         </div>
       </div>
 
-      <!-- Incidents: Loaded from DB -->
-      <div class="stat-card">
-        <span class="stat-emoji">⚠️</span>
+      <!-- Low / Clear Flow (Green) -->
+      <div class="traffic-kpi-card clear">
+        <div class="kpi-icon-box clear">
+          <i class="fa-solid fa-road"></i>
+        </div>
         <div>
-          <div class="stat-value" id="adminIncCount">...</div>
-          <div class="stat-label">Active Incidents (MongoDB)</div>
+          <div style="font-size:22px; font-weight:800; color:#10B981;" id="countClear">2 Roads</div>
+          <div style="font-size:12px; color:#64748B; font-weight:600;">Clear Flow (Green)</div>
         </div>
       </div>
 
-      <!-- Emergency Vehicles: 3 -->
-      <div class="stat-card">
-        <span class="stat-emoji">🚑</span>
+      <!-- ML Model Accuracy -->
+      <div class="traffic-kpi-card ml">
+        <div class="kpi-icon-box ml">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
         <div>
-          <div class="stat-value" id="kpiEmergencyUnits">3</div>
-          <div class="stat-label">Emergency Priority Units</div>
+          <div style="font-size:22px; font-weight:800; color:#7C3AED;" id="valMlAccuracy">94.6%</div>
+          <div style="font-size:12px; color:#64748B; font-weight:600;">ML Prediction Confidence</div>
         </div>
       </div>
     </section>
 
-    <!-- ===== MAIN ADMIN GRID (Map + ML Predictions & Incidents) ===== -->
-    <div class="admin-grid">
+    <!-- ===== MAIN MAP + ROADS EXPLORER GRID ===== -->
+    <div class="ml-traffic-container">
       
-      <!-- Left Column: Live Traffic Map with Colored Congestion Layers -->
-      <div class="map-panel">
-        <div class="map-header">
-          <div class="map-title">
-            <i class="fa-solid fa-satellite" style="color: var(--purple);"></i>
-            <span>Live City Sensor Network &bull; Patiala Metropolitan Area</span>
+      <!-- Left: Interactive Leaflet Traffic Radar Map -->
+      <div class="radar-map-panel">
+        <div class="radar-map-header">
+          <div style="display:flex; align-items:center; gap:8px; font-weight:600;">
+            <i class="fa-solid fa-satellite-dish" style="color:#60A5FA;"></i>
+            <span id="mapCityTitle">Patiala Metropolitan Traffic Network</span>
           </div>
-          <div class="map-status-pill">
-            142 Intersections Connected
+          <div class="map-legend">
+            <span class="legend-tag"><span class="legend-dot red"></span> Heavy (Speed &lt; 20 km/h)</span>
+            <span class="legend-tag"><span class="legend-dot blue"></span> Moderate (20-45 km/h)</span>
+            <span class="legend-tag"><span class="legend-dot green"></span> Clear (&gt; 45 km/h)</span>
           </div>
         </div>
-        <div id="adminLiveMap" style="height: 580px;"></div>
+        <div id="adminRadarMap" style="height: 600px; width:100%;"></div>
       </div>
 
-      <!-- Right Column: ML Predictions & Active Incidents -->
-      <div>
-        
-        <!-- Module 1: ML Predictions Panel -->
-        <div class="admin-card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="margin:0;">
-              <span><i class="fa-solid fa-brain" style="color: var(--purple);"></i> ML Congestion Engine</span>
-            </h3>
-            <button onclick="recalculateML()" id="recalcBtn" class="admin-action-btn" style="background:#7C3AED; font-size:11px;">
-              <i class="fa-solid fa-microchip"></i> Run Forecast
-            </button>
+      <!-- Right: Side Panel (Roads Traffic List + Road Search) -->
+      <div class="roads-side-panel">
+        <div class="side-panel-header">
+          <h3>
+            <span><i class="fa-solid fa-road-circle-check" style="color:#4F46E5;"></i> Road Traffic Status</span>
+            <span id="totalRoadsCount" style="font-size:12px; font-weight:600; color:#64748B;">8 Corridors</span>
+          </h3>
+
+          <!-- Search Road Input -->
+          <div class="road-search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="roadSearchInput" placeholder="Filter road by name (e.g. Bypass, Phase 7)..." oninput="filterRoads()">
           </div>
 
-          <!-- Road A -->
-          <div class="prediction-row" id="mlRowA">
-            <div>
-              <div class="pred-road">Road A (Phase 7 Chowk)</div>
-              <div class="pred-transition">Current: <strong>Medium</strong> &rarr; Predicted: <strong style="color:#B45309;">High</strong></div>
-            </div>
-            <span class="pred-badge high">Medium &rarr; High</span>
-          </div>
-
-          <!-- Road B -->
-          <div class="prediction-row" id="mlRowB">
-            <div>
-              <div class="pred-road">Road B (Urban Estate Ring)</div>
-              <div class="pred-transition">Current: <strong>Low</strong> &rarr; Predicted: <strong style="color:#4338CA;">Medium</strong></div>
-            </div>
-            <span class="pred-badge medium">Low &rarr; Medium</span>
-          </div>
-
-          <!-- Road C -->
-          <div class="prediction-row" id="mlRowC">
-            <div>
-              <div class="pred-road">Road C (Main Bypass Highway)</div>
-              <div class="pred-transition">Current: <strong>High</strong> &rarr; Predicted: <strong style="color:#B91C1C;">Severe</strong></div>
-            </div>
-            <span class="pred-badge severe">High &rarr; Severe</span>
-          </div>
-
-          <!-- Road D -->
-          <div class="prediction-row" id="mlRowD">
-            <div>
-              <div class="pred-road">Road D (Lower Mall Road)</div>
-              <div class="pred-transition">Current: <strong>Low</strong> &rarr; Predicted: <strong style="color:#059669;">Low</strong></div>
-            </div>
-            <span class="pred-badge" style="background:#D1FAE5; color:#065F46;">Low &rarr; Low</span>
+          <!-- Traffic Filter Pills -->
+          <div class="filter-pills">
+            <button class="filter-pill active" onclick="setRoadFilter('all', this)">All</button>
+            <button class="filter-pill" onclick="setRoadFilter('heavy', this)" style="color:#DC2626;">🔴 Heavy</button>
+            <button class="filter-pill" onclick="setRoadFilter('moderate', this)" style="color:#2563EB;">🔵 Moderate</button>
+            <button class="filter-pill" onclick="setRoadFilter('clear', this)" style="color:#15803D;">🟢 Clear</button>
           </div>
         </div>
 
-        <!-- Module 2: Dynamic Active Incidents List (Stored in MongoDB) -->
-        <div class="admin-card">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <h3 style="margin:0;">
-              <span><i class="fa-solid fa-triangle-exclamation" style="color: #EF4444;"></i> Incidents Management (MongoDB)</span>
-            </h3>
-            <button onclick="openAddIncidentModal()" class="admin-action-btn success">
-              <i class="fa-solid fa-plus"></i> Add Incident
-            </button>
-          </div>
-
-          <!-- Live Dynamic Incidents Container -->
-          <div id="adminIncidentsContainer" style="display:flex; flex-direction:column; gap:10px; max-height:360px; overflow-y:auto; padding-right:4px;">
-            <div style="text-align:center; padding:20px; color:#64748B;">
-              <i class="fa-solid fa-spinner fa-spin"></i> Fetching incidents from MongoDB...
-            </div>
-          </div>
+        <!-- Scrollable Road List -->
+        <div class="roads-scroll-list" id="roadsListContainer">
+          <!-- Injected via JavaScript -->
         </div>
-
       </div>
 
-    </div>
-
-    <!-- ===== SECTION 3: SYSTEM ROLE-BASED ACCESS CONTROL (RBAC) ===== -->
-    <div class="admin-card" style="margin-top: 20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0;">
-          <span><i class="fa-solid fa-users-gear" style="color: var(--purple);"></i> User Access & Role-Based Privileges (RBAC Database)</span>
-          <span style="font-size: 12px; color: #6B7280; font-weight: normal; margin-left:8px;">MongoDB Collection: <code>users</code></span>
-        </h3>
-        <button onclick="openAddUserModal()" class="admin-action-btn">
-          <i class="fa-solid fa-user-plus"></i> Register System User
-        </button>
-      </div>
-
-      <div style="overflow-x: auto;">
-        <table class="algo-table">
-          <thead>
-            <tr>
-              <th>User Name</th>
-              <th>Assigned Role</th>
-              <th>Access Level</th>
-              <th>Permissions</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="accessMatrixBody">
-            <tr>
-              <td colspan="6" style="text-align:center; padding:16px; color:#64748B;">
-                <i class="fa-solid fa-spinner fa-spin"></i> Loading operators from database...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </div>
 
   </main>
 
-  <!-- ===== MODAL: ADD NEW INCIDENT DIRECT TO MONGODB ===== -->
-  <div id="addIncidentModal" class="modal-backdrop">
-    <div class="admin-modal">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;"><i class="fa-solid fa-bullhorn" style="color:#EF4444;"></i> Dispatch New Incident</h3>
-        <button onclick="closeModals()" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
-      </div>
-      <form id="adminNewIncidentForm">
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Category</label>
-          <select id="modalIncType" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-            <option value="Accident">💥 Vehicle Collision / Accident</option>
-            <option value="Roadwork">🚧 Construction / Roadwork</option>
-            <option value="Breakdown">🚗 Stalled Vehicle / Breakdown</option>
-            <option value="Signal Failure">🚦 Signal Malfunction</option>
-            <option value="Road Blockage">⛔ Lane Blockage</option>
-          </select>
-        </div>
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Road Location</label>
-          <input type="text" id="modalIncRoad" placeholder="e.g. Phase 7 Chowk, Main Bypass" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-        </div>
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Severity</label>
-          <select id="modalIncSeverity" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-            <option value="Critical">🔴 Critical (Total Lane Blockage)</option>
-            <option value="Moderate" selected>🟡 Moderate (Partial Block)</option>
-            <option value="Minor">🔵 Minor (Shoulder Lane)</option>
-          </select>
-        </div>
-        <div class="input-group" style="margin-bottom:16px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Description</label>
-          <textarea id="modalIncDesc" rows="3" placeholder="Provide event details..." required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;"></textarea>
-        </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" onclick="closeModals()" class="admin-action-btn" style="background:#64748B;">Cancel</button>
-          <button type="submit" class="admin-action-btn success"><i class="fa-solid fa-cloud-arrow-up"></i> Save to MongoDB</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ===== MODAL: ADD SYSTEM USER DIRECT TO MONGODB ===== -->
-  <div id="addUserModal" class="modal-backdrop">
-    <div class="admin-modal">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-        <h3 style="margin:0;"><i class="fa-solid fa-user-shield" style="color:var(--purple);"></i> Register System Operator</h3>
-        <button onclick="closeModals()" style="background:none; border:none; font-size:18px; cursor:pointer;">&times;</button>
-      </div>
-      <form id="adminNewUserForm">
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Full Name</label>
-          <input type="text" id="modalUserName" placeholder="e.g. Officer Rohit Sharma" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-        </div>
-        <div class="input-group" style="margin-bottom:12px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">System Role</label>
-          <select id="modalUserRole" style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-            <option value="traffic_manager">Traffic Authority Officer</option>
-            <option value="admin">System Administrator</option>
-            <option value="user">Commuter / Citizen</option>
-          </select>
-        </div>
-        <div class="input-group" style="margin-bottom:16px;">
-          <label style="display:block; font-weight:600; margin-bottom:4px;">Granted Permissions</label>
-          <input type="text" id="modalUserPerms" placeholder="e.g. Adaptive signals, alert broadcast" value="Adaptive signals, incident verification" required style="width:100%; padding:10px; border-radius:6px; border:1px solid #CBD5E1;">
-        </div>
-        <div style="display:flex; justify-content:flex-end; gap:8px;">
-          <button type="button" onclick="closeModals()" class="admin-action-btn" style="background:#64748B;">Cancel</button>
-          <button type="submit" class="admin-action-btn success"><i class="fa-solid fa-check"></i> Register to Database</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <script src="data.js"></script>
   <script src="script.js"></script>
   <script>
-    let adminMap = null;
-    let liveIncidents = [];
-    let liveUsers = [];
+    // Comprehensive City Road Networks with Heavy (Red) & Moderate (Blue) Segments
+    const CITY_TRAFFIC_DATA = {
+      'patiala': {
+        name: 'Patiala',
+        state: 'Punjab',
+        center: [30.3398, 76.3869],
+        zoom: 13,
+        accuracy: '94.6%',
+        roads: [
+          {
+            id: 'p1',
+            name: 'Road C (Main Bypass Highway)',
+            level: 'heavy',
+            speed: '14 km/h',
+            congestion: '89%',
+            confidence: '96%',
+            prediction: 'High Delay Expected (+18m)',
+            description: 'Major transit corridor. High commuter density at exit ramps.',
+            path: [
+              [30.3340, 76.3890],
+              [30.3298, 76.3980],
+              [30.3220, 76.4100],
+              [30.3150, 76.4250]
+            ]
+          },
+          {
+            id: 'p2',
+            name: 'Road A (Phase 7 Chowk to Bypass)',
+            level: 'heavy',
+            speed: '16 km/h',
+            congestion: '84%',
+            confidence: '93%',
+            prediction: 'Critical Congestion Peak',
+            description: 'High volume intersection near commercial zone.',
+            path: [
+              [30.3475, 76.3750],
+              [30.3412, 76.3815],
+              [30.3340, 76.3890]
+            ]
+          },
+          {
+            id: 'p3',
+            name: 'Rajpura Road Highway Junction',
+            level: 'heavy',
+            speed: '18 km/h',
+            congestion: '79%',
+            confidence: '91%',
+            prediction: 'Rising Traffic Jam',
+            description: 'Interstate commercial freight & bus terminal link.',
+            path: [
+              [30.3452, 76.4012],
+              [30.3520, 76.4150],
+              [30.3580, 76.4320]
+            ]
+          },
+          {
+            id: 'p4',
+            name: 'Road B (Urban Estate Ring Road)',
+            level: 'moderate',
+            speed: '34 km/h',
+            congestion: '48%',
+            confidence: '89%',
+            prediction: 'Moderate Stable Flow',
+            description: 'Residential ring route, smooth flow with minor signal delays.',
+            path: [
+              [30.3544, 76.3688],
+              [30.3600, 76.3790],
+              [30.3510, 76.3920]
+            ]
+          },
+          {
+            id: 'p5',
+            name: 'Lower Mall Road (Fountain Chowk - Baradari)',
+            level: 'moderate',
+            speed: '31 km/h',
+            congestion: '52%',
+            confidence: '92%',
+            prediction: 'Steady Traffic',
+            description: 'Central heritage corridor with active retail shopper traffic.',
+            path: [
+              [30.3370, 76.3945],
+              [30.3420, 76.3930],
+              [30.3460, 76.3940]
+            ]
+          },
+          {
+            id: 'p6',
+            name: 'Leela Bhawan Market Link',
+            level: 'moderate',
+            speed: '28 km/h',
+            congestion: '56%',
+            confidence: '88%',
+            prediction: 'Moderate Peak Volume',
+            description: 'Commercial market plaza lane with moderate vehicle queues.',
+            path: [
+              [30.3355, 76.3915],
+              [30.3310, 76.3900],
+              [30.3280, 76.3830]
+            ]
+          },
+          {
+            id: 'p7',
+            name: 'Sirhind Road Northway',
+            level: 'clear',
+            speed: '54 km/h',
+            congestion: '18%',
+            confidence: '95%',
+            prediction: 'Uncongested / Fast Flow',
+            description: 'Clear arterial route heading north towards GT Highway.',
+            path: [
+              [30.3550, 76.3800],
+              [30.3680, 76.3820],
+              [30.3800, 76.3850]
+            ]
+          },
+          {
+            id: 'p8',
+            name: 'Thapar University Perimeter Road',
+            level: 'clear',
+            speed: '46 km/h',
+            congestion: '22%',
+            confidence: '94%',
+            prediction: 'Smooth Campus Transit',
+            description: 'Outer ring campus road with minimal vehicle bottlenecks.',
+            path: [
+              [30.3544, 76.3688],
+              [30.3580, 76.3640],
+              [30.3620, 76.3660]
+            ]
+          }
+        ]
+      },
+      'chandigarh': {
+        name: 'Chandigarh',
+        state: 'UT',
+        center: [30.7333, 76.7794],
+        zoom: 13,
+        accuracy: '95.2%',
+        roads: [
+          {
+            id: 'ch1',
+            name: 'Tribune Chowk Flyover Corridor',
+            level: 'heavy',
+            speed: '12 km/h',
+            congestion: '91%',
+            confidence: '97%',
+            prediction: 'Severe Traffic Jam (+22m)',
+            description: 'High commuter bottleneck entering from Zirakpur / Mohali.',
+            path: [
+              [30.7100, 76.7850],
+              [30.7200, 76.7800],
+              [30.7280, 76.7730]
+            ]
+          },
+          {
+            id: 'ch2',
+            name: 'Madhya Marg (Sector 26 - Sector 7)',
+            level: 'heavy',
+            speed: '15 km/h',
+            congestion: '86%',
+            confidence: '94%',
+            prediction: 'High Congestion Surge',
+            description: 'Commercial spine roadway with continuous signal wait times.',
+            path: [
+              [30.7380, 76.7620],
+              [30.7420, 76.7750],
+              [30.7460, 76.7900]
+            ]
+          },
+          {
+            id: 'ch3',
+            name: 'Dakshin Marg Highway Connection',
+            level: 'heavy',
+            speed: '17 km/h',
+            congestion: '81%',
+            confidence: '92%',
+            prediction: 'Heavy Approach Delays',
+            description: 'High-speed avenue facing slow peak commuter crawl.',
+            path: [
+              [30.7150, 76.7550],
+              [30.7220, 76.7680],
+              [30.7300, 76.7820]
+            ]
+          },
+          {
+            id: 'ch4',
+            name: 'Himalaya Marg (Sector 17 - 22)',
+            level: 'moderate',
+            speed: '33 km/h',
+            congestion: '51%',
+            confidence: '90%',
+            prediction: 'Moderate City Flow',
+            description: 'Central plaza connecting road with moderate traffic lights.',
+            path: [
+              [30.7450, 76.7780],
+              [30.7380, 76.7720],
+              [30.7280, 76.7650]
+            ]
+          },
+          {
+            id: 'ch5',
+            name: 'Industrial Area Phase 1 Access Road',
+            level: 'moderate',
+            speed: '30 km/h',
+            congestion: '54%',
+            confidence: '89%',
+            prediction: 'Moderate Commercial Flow',
+            description: 'Commercial mall & delivery logistics transit route.',
+            path: [
+              [30.7046, 76.8014],
+              [30.7110, 76.7950],
+              [30.7180, 76.7900]
+            ]
+          },
+          {
+            id: 'ch6',
+            name: 'Sukhna Lake Promenade Corridor',
+            level: 'clear',
+            speed: '50 km/h',
+            congestion: '16%',
+            confidence: '96%',
+            prediction: 'Clear Scenic Route',
+            description: 'Open green corridor with light vehicle presence.',
+            path: [
+              [30.7424, 76.8188],
+              [30.7500, 76.8120],
+              [30.7560, 76.8020]
+            ]
+          }
+        ]
+      },
+      'delhi': {
+        name: 'Delhi NCR',
+        state: 'Delhi',
+        center: [28.6139, 77.2090],
+        zoom: 12,
+        accuracy: '93.8%',
+        roads: [
+          {
+            id: 'd1',
+            name: 'Dhaula Kuan Intersection Ring',
+            level: 'heavy',
+            speed: '11 km/h',
+            congestion: '94%',
+            confidence: '98%',
+            prediction: 'Extreme Congestion Alert',
+            description: 'Major multi-tiered junction experiencing gridlock conditions.',
+            path: [
+              [28.5860, 77.1550],
+              [28.5921, 77.1622],
+              [28.6010, 77.1700]
+            ]
+          },
+          {
+            id: 'd2',
+            name: 'Outer Ring Road (AIIMS Flyover)',
+            level: 'heavy',
+            speed: '14 km/h',
+            congestion: '88%',
+            confidence: '95%',
+            prediction: 'Severe Traffic Choke',
+            description: 'Hospital & institutional artery with dense traffic queue.',
+            path: [
+              [28.5672, 77.2100],
+              [28.5640, 77.2250],
+              [28.5600, 77.2400]
+            ]
+          },
+          {
+            id: 'd3',
+            name: 'ITO Junction & Vikas Marg',
+            level: 'heavy',
+            speed: '13 km/h',
+            congestion: '90%',
+            confidence: '96%',
+            prediction: 'Heavy Bottleneck Ahead',
+            description: 'East Delhi river crossing bridge with dense office traffic.',
+            path: [
+              [28.6300, 77.2450],
+              [28.6320, 77.2550],
+              [28.6350, 77.2700]
+            ]
+          },
+          {
+            id: 'd4',
+            name: 'Connaught Place Radial Ring',
+            level: 'moderate',
+            speed: '29 km/h',
+            congestion: '55%',
+            confidence: '91%',
+            prediction: 'Moderate Commercial Transit',
+            description: 'Circular central hub with moderate circulating speed.',
+            path: [
+              [28.6315, 77.2167],
+              [28.6350, 77.2210],
+              [28.6280, 77.2230]
+            ]
+          },
+          {
+            id: 'd5',
+            name: 'Barapullah Elevated Bypass',
+            level: 'moderate',
+            speed: '40 km/h',
+            congestion: '42%',
+            confidence: '93%',
+            prediction: 'Steady Flow',
+            description: 'Elevated bypass with moderate speed and no cross signals.',
+            path: [
+              [28.5750, 77.2350],
+              [28.5800, 77.2500],
+              [28.5850, 77.2650]
+            ]
+          },
+          {
+            id: 'd6',
+            name: 'Shanti Path Diplomatic Avenue',
+            level: 'clear',
+            speed: '58 km/h',
+            congestion: '12%',
+            confidence: '98%',
+            prediction: 'Fast Unobstructed Transit',
+            description: 'Wide boulevard with smooth vehicle progression.',
+            path: [
+              [28.5980, 77.1950],
+              [28.5900, 77.1900],
+              [28.5820, 77.1850]
+            ]
+          }
+        ]
+      },
+      'ludhiana': {
+        name: 'Ludhiana',
+        state: 'Punjab',
+        center: [30.9010, 75.8573],
+        zoom: 13,
+        accuracy: '94.1%',
+        roads: [
+          {
+            id: 'ld1',
+            name: 'Ferozepur Road (PAU to Wave Mall)',
+            level: 'heavy',
+            speed: '13 km/h',
+            congestion: '88%',
+            confidence: '95%',
+            prediction: 'High Congestion / Flyover Delay',
+            description: 'Commercial spine road with extensive business traffic.',
+            path: [
+              [30.9059, 75.8074],
+              [30.8980, 75.8250],
+              [30.8920, 75.8450]
+            ]
+          },
+          {
+            id: 'ld2',
+            name: 'Clock Tower Chowk (Ghanta Ghar)',
+            level: 'heavy',
+            speed: '10 km/h',
+            congestion: '93%',
+            confidence: '97%',
+            prediction: 'Dense Market Bottleneck',
+            description: 'Old city center with heavy two-wheeler and commercial density.',
+            path: [
+              [30.9009, 75.8573],
+              [30.9050, 75.8620],
+              [30.9100, 75.8670]
+            ]
+          },
+          {
+            id: 'ld3',
+            name: 'Pakhowal Road Commercial Link',
+            level: 'moderate',
+            speed: '32 km/h',
+            congestion: '49%',
+            confidence: '90%',
+            prediction: 'Moderate Traffic Level',
+            description: 'Residential and retail connector with moderate delays.',
+            path: [
+              [30.8850, 75.8300],
+              [30.8750, 75.8350],
+              [30.8650, 75.8400]
+            ]
+          },
+          {
+            id: 'ld4',
+            name: 'South City Bypass Expressway',
+            level: 'clear',
+            speed: '55 km/h',
+            congestion: '15%',
+            confidence: '95%',
+            prediction: 'Fast Smooth Transit',
+            description: 'Canal expressway with free-flowing traffic.',
+            path: [
+              [30.9200, 75.7900],
+              [30.9300, 75.8100],
+              [30.9400, 75.8300]
+            ]
+          }
+        ]
+      },
+      'amritsar': {
+        name: 'Amritsar',
+        state: 'Punjab',
+        center: [31.6340, 74.8723],
+        zoom: 13,
+        accuracy: '95.0%',
+        roads: [
+          {
+            id: 'as1',
+            name: 'Golden Temple Heritage Corridor',
+            level: 'heavy',
+            speed: '9 km/h',
+            congestion: '95%',
+            confidence: '98%',
+            prediction: 'High Pedestrian & Pilgrim Traffic',
+            description: 'Strict low-speed zone with heavy pilgrim congestion.',
+            path: [
+              [31.6200, 74.8765],
+              [31.6240, 74.8750],
+              [31.6290, 74.8730]
+            ]
+          },
+          {
+            id: 'as2',
+            name: 'Railway Road to Bus Terminal Link',
+            level: 'heavy',
+            speed: '14 km/h',
+            congestion: '85%',
+            confidence: '93%',
+            prediction: 'Severe Transit Jams',
+            description: 'Bus and taxi terminal intersection.',
+            path: [
+              [31.6336, 74.8736],
+              [31.6380, 74.8820],
+              [31.6420, 74.8900]
+            ]
+          },
+          {
+            id: 'as3',
+            name: 'Mall Road Commercial Boulevard',
+            level: 'moderate',
+            speed: '34 km/h',
+            congestion: '46%',
+            confidence: '91%',
+            prediction: 'Moderate Flow',
+            description: 'Upmarket shopping corridor with steady flow.',
+            path: [
+              [31.6450, 74.8680],
+              [31.6500, 74.8750],
+              [31.6550, 74.8820]
+            ]
+          },
+          {
+            id: 'as4',
+            name: 'Airport Bypass Expressway',
+            level: 'clear',
+            speed: '62 km/h',
+            congestion: '12%',
+            confidence: '96%',
+            prediction: 'Rapid Highway Transit',
+            description: 'Four-lane expressway toward Rajasansi Airport.',
+            path: [
+              [31.6700, 74.8200],
+              [31.6850, 74.8100],
+              [31.7000, 74.8000]
+            ]
+          }
+        ]
+      },
+      'mumbai': {
+        name: 'Mumbai',
+        state: 'Maharashtra',
+        center: [19.0760, 72.8777],
+        zoom: 12,
+        accuracy: '92.4%',
+        roads: [
+          {
+            id: 'm1',
+            name: 'Western Express Highway (Bandra to Andheri)',
+            level: 'heavy',
+            speed: '12 km/h',
+            congestion: '96%',
+            confidence: '98%',
+            prediction: 'Heavy Stop-and-Go Crawl',
+            description: 'High volume artery connecting North-South Mumbai.',
+            path: [
+              [19.0550, 72.8450],
+              [19.0750, 72.8550],
+              [19.1150, 72.8580]
+            ]
+          },
+          {
+            id: 'm2',
+            name: 'Bandra Kurla Complex (BKC) Financial Ring',
+            level: 'heavy',
+            speed: '15 km/h',
+            congestion: '89%',
+            confidence: '95%',
+            prediction: 'Severe Peak Gridlock',
+            description: 'Financial hub exit with peak evening office rush.',
+            path: [
+              [19.0669, 72.8679],
+              [19.0620, 72.8620],
+              [19.0600, 72.8750]
+            ]
+          },
+          {
+            id: 'm3',
+            name: 'Eastern Freeway Corridor',
+            level: 'moderate',
+            speed: '38 km/h',
+            congestion: '46%',
+            confidence: '92%',
+            prediction: 'Moderate Elevated Speed',
+            description: 'Signal-free elevated transit towards South Mumbai.',
+            path: [
+              [19.0300, 72.8900],
+              [19.0100, 72.8750],
+              [18.9600, 72.8500]
+            ]
+          },
+          {
+            id: 'm4',
+            name: 'Marine Drive Promenade Avenue',
+            level: 'clear',
+            speed: '48 km/h',
+            congestion: '20%',
+            confidence: '95%',
+            prediction: 'Smooth Coastal Transit',
+            description: 'Scenic six-lane road along Back Bay.',
+            path: [
+              [18.9432, 72.8235],
+              [18.9350, 72.8250],
+              [18.9250, 72.8280]
+            ]
+          }
+        ]
+      },
+      'bangalore': {
+        name: 'Bengaluru',
+        state: 'Karnataka',
+        center: [12.9716, 77.5946],
+        zoom: 12,
+        accuracy: '93.2%',
+        roads: [
+          {
+            id: 'b1',
+            name: 'Silk Board Flyover & Junction',
+            level: 'heavy',
+            speed: '8 km/h',
+            congestion: '98%',
+            confidence: '99%',
+            prediction: 'Severe Historic Chokepoint',
+            description: 'Major intersection connecting Outer Ring Road & Hosur Road.',
+            path: [
+              [12.9150, 77.6200],
+              [12.9175, 77.6235],
+              [12.9220, 77.6300]
+            ]
+          },
+          {
+            id: 'b2',
+            name: 'Outer Ring Road (Bellandur Tech Corridor)',
+            level: 'heavy',
+            speed: '12 km/h',
+            congestion: '92%',
+            confidence: '96%',
+            prediction: 'Heavy Tech Park Delay',
+            description: 'IT hub transit route with continuous peak-hour backlog.',
+            path: [
+              [12.9280, 77.6650],
+              [12.9350, 77.6800],
+              [12.9420, 77.6950]
+            ]
+          },
+          {
+            id: 'b3',
+            name: 'Indiranagar 100ft Commercial Road',
+            level: 'moderate',
+            speed: '30 km/h',
+            congestion: '52%',
+            confidence: '91%',
+            prediction: 'Moderate Active Traffic',
+            description: 'Dining and retail street with moderate pedestrian crossings.',
+            path: [
+              [12.9719, 77.6412],
+              [12.9650, 77.6400],
+              [12.9550, 77.6380]
+            ]
+          },
+          {
+            id: 'b4',
+            name: 'Electronic City Elevated Expressway',
+            level: 'clear',
+            speed: '65 km/h',
+            congestion: '14%',
+            confidence: '97%',
+            prediction: 'High Speed Toll Route',
+            description: 'Access-controlled elevated toll corridor.',
+            path: [
+              [12.8452, 77.6602],
+              [12.8700, 77.6500],
+              [12.8900, 77.6400]
+            ]
+          }
+        ]
+      }
+    };
+
+    let radarMap = null;
+    let currentCityKey = 'patiala';
+    let currentFilter = 'all';
+    let mapLayers = [];
+    let roadPolylines = {};
 
     document.addEventListener('DOMContentLoaded', () => {
-      initAdminMap();
-      refreshDashboardData();
-      setupModalListeners();
+      initMap();
+      loadCity('patiala');
+
+      // Enter key on search input
+      document.getElementById('citySearchInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') handleCitySearch();
+      });
     });
 
-    // Initialize Map with Patiala coordinates and colored routes
-    function initAdminMap() {
-      const patiala = window.UrbanFlowData.getCityData('patiala');
-      adminMap = createLeafletMap('adminLiveMap', patiala.lat, patiala.lon, 13);
+    // Initialize Leaflet Map
+    function initMap() {
+      radarMap = L.map('adminRadarMap', {
+        zoomControl: true,
+        scrollWheelZoom: true
+      }).setView([30.3398, 76.3869], 13);
 
-      if (adminMap) {
-        // Draw Road A (Phase 7 - Amber Moderate)
-        const roadA = L.polyline([
-          [30.3475, 76.3750],
-          [30.3412, 76.3815],
-          [30.3340, 76.3890]
-        ], { color: '#F59E0B', weight: 6, opacity: 0.9 }).addTo(adminMap);
-        roadA.bindPopup('<b>Road A (Phase 7 Chowk)</b><br>Traffic: Moderate (Speed: 38 km/h)<br>ML Forecast: Rising to High');
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors | UrbanFlow ML Radar'
+      }).addTo(radarMap);
+    }
 
-        // Draw Road B (Urban Estate Ring - Green Low)
-        const roadB = L.polyline([
-          [30.3544, 76.3688],
-          [30.3600, 76.3790],
-          [30.3510, 76.3920]
-        ], { color: '#10B981', weight: 6, opacity: 0.9 }).addTo(adminMap);
-        roadB.bindPopup('<b>Road B (Urban Estate Ring)</b><br>Traffic: Low (Speed: 52 km/h)<br>ML Forecast: Stable');
+    // Load and Render City Traffic Network
+    function loadCity(cityKey, customCityData = null) {
+      currentCityKey = cityKey;
+      let city = customCityData || CITY_TRAFFIC_DATA[cityKey];
 
-        // Draw Road C (Main Bypass Highway - Red Severe)
-        const roadC = L.polyline([
-          [30.3340, 76.3890],
-          [30.3298, 76.3980],
-          [30.3220, 76.4100]
-        ], { color: '#EF4444', weight: 7, opacity: 0.95 }).addTo(adminMap);
-        roadC.bindPopup('<b>Road C (Main Bypass)</b><br>Traffic: Severe (Speed: 14 km/h)<br>Alert: Incident Reported');
-
-        // Dynamic pin
-        L.marker([30.3340, 76.3890], {
-          icon: createCustomPin('#EF4444', '💥')
-        }).addTo(adminMap).bindPopup('<b>Live Incident Point:</b> Main Bypass Exit');
-
-        adminMap.fitBounds(roadC.getBounds(), { padding: [50, 50] });
+      if (!city) {
+        city = generateSyntheticCityTraffic(cityKey);
       }
-    }
 
-    // Refresh all data from MongoDB Serverless Endpoints with graceful local fallback
-    async function refreshDashboardData() {
-      await Promise.all([
-        fetchIncidentsFromDB(),
-        fetchUsersFromDB(),
-        fetchStatsFromDB()
-      ]);
-    }
+      // Update Title & Header
+      document.getElementById('mapCityTitle').textContent = `${city.name} ML Traffic Congestion Radar`;
+      document.getElementById('valMlAccuracy').textContent = city.accuracy || '94.2%';
 
-    // 1. Fetch Incidents from MongoDB /api/incidents
-    async function fetchIncidentsFromDB() {
-      const container = document.getElementById('adminIncidentsContainer');
-      try {
-        const res = await fetch('/api/incidents');
-        if (!res.ok) throw new Error('API offline or 404');
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          liveIncidents = json.data;
-          setDBStatus(true, 'MongoDB Atlas: Connected (Live Synchronized)');
+      // Update Map View
+      radarMap.setView(city.center, city.zoom || 13);
+
+      // Clear existing layers
+      mapLayers.forEach(layer => radarMap.removeLayer(layer));
+      mapLayers = [];
+      roadPolylines = {};
+
+      // Draw Roads onto Map:
+      // HEAVY -> RED (#EF4444)
+      // MODERATE -> BLUE (#2563EB)
+      // CLEAR -> GREEN (#10B981)
+      let countH = 0;
+      let countM = 0;
+      let countC = 0;
+
+      city.roads.forEach(road => {
+        let strokeColor = '#10B981';
+        let weight = 5;
+        let opacity = 0.85;
+
+        if (road.level === 'heavy') {
+          strokeColor = '#EF4444'; // RED FOR HEAVY TRAFFIC
+          weight = 7;
+          opacity = 0.95;
+          countH++;
+        } else if (road.level === 'moderate') {
+          strokeColor = '#2563EB'; // BLUE FOR MODERATE TRAFFIC
+          weight = 6;
+          opacity = 0.9;
+          countM++;
         } else {
-          throw new Error(json.error || 'Failed to parse');
+          countC++;
         }
-      } catch (err) {
-        console.warn('Falling back to local data store:', err);
-        liveIncidents = window.UrbanFlowData.getIncidents();
-        setDBStatus(false, 'Local Backup Active (Push to Vercel for Live Atlas)');
-      }
-      renderIncidents(liveIncidents);
-      document.getElementById('adminIncCount').textContent = liveIncidents.length;
+
+        const polyline = L.polyline(road.path, {
+          color: strokeColor,
+          weight: weight,
+          opacity: opacity,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(radarMap);
+
+        // Rich Popup Tooltip with ML Prediction
+        const popupContent = `
+          <div style="font-family:sans-serif; min-width:200px;">
+            <div style="font-weight:700; font-size:14px; margin-bottom:4px; color:#0F172A;">
+              ${road.name}
+            </div>
+            <div style="margin-bottom:6px;">
+              <span style="font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px; 
+                background:${road.level==='heavy'?'#FEE2E2':(road.level==='moderate'?'#DBEAFE':'#DCFCE7')}; 
+                color:${road.level==='heavy'?'#DC2626':(road.level==='moderate'?'#1D4ED8':'#15803D')};">
+                ${road.level.toUpperCase()} TRAFFIC
+              </span>
+            </div>
+            <div style="font-size:12px; color:#334155; line-height:1.5;">
+              <strong>Speed:</strong> ${road.speed}<br>
+              <strong>Congestion:</strong> ${road.congestion}<br>
+              <strong>ML Forecast:</strong> ${road.prediction}<br>
+              <strong>Model Confidence:</strong> ${road.confidence}
+            </div>
+          </div>
+        `;
+        polyline.bindPopup(popupContent);
+
+        // Save reference for clicking from side panel
+        roadPolylines[road.id] = polyline;
+        mapLayers.push(polyline);
+      });
+
+      // Update KPI counts
+      document.getElementById('countHeavy').textContent = `${countH} Roads`;
+      document.getElementById('countModerate').textContent = `${countM} Roads`;
+      document.getElementById('countClear').textContent = `${countC} Roads`;
+      document.getElementById('totalRoadsCount').textContent = `${city.roads.length} Corridors`;
+
+      // Render the Side Panel Roads
+      renderSidePanelRoads(city.roads);
     }
 
-    // Render Incidents into Admin List
-    function renderIncidents(incidents) {
-      const container = document.getElementById('adminIncidentsContainer');
-      if (!incidents || incidents.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:20px; color:#64748B;">No active incidents reported. All roads clear!</div>';
+    // Render Side Panel Road List
+    function renderSidePanelRoads(roads) {
+      const container = document.getElementById('roadsListContainer');
+      const searchQuery = (document.getElementById('roadSearchInput').value || '').toLowerCase().trim();
+
+      const filtered = roads.filter(road => {
+        const matchesFilter = (currentFilter === 'all') || (road.level === currentFilter);
+        const matchesSearch = !searchQuery || road.name.toLowerCase().includes(searchQuery) || road.description.toLowerCase().includes(searchQuery);
+        return matchesFilter && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding:30px 10px; color:#64748B;">
+            <i class="fa-solid fa-road-barrier" style="font-size:28px; margin-bottom:8px; display:block; color:#CBD5E1;"></i>
+            No roads match your search criteria.
+          </div>
+        `;
         return;
       }
 
       container.innerHTML = '';
-      incidents.forEach(inc => {
-        const id = inc._id || inc.id;
-        const sevClass = (inc.severity || 'minor').toLowerCase();
-        const item = document.createElement('div');
-        item.className = 'incident-admin-item';
-        item.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
-              <strong style="font-size:14px;">${escapeHtml(inc.title || inc.type)}</strong>
-              <div style="font-size:12px; color:#475569; margin-top:2px;">
-                <i class="fa-solid fa-location-dot" style="color:#EF4444;"></i> ${escapeHtml(inc.road || 'Patiala Corridor')} &bull; 
-                <span style="color:#64748B;">Reported by: ${escapeHtml(inc.reportedBy || 'User')}</span>
-              </div>
-              <div style="font-size:12px; color:#64748B; margin-top:4px;">${escapeHtml(inc.description || 'No additional notes.')}</div>
-            </div>
-            <span class="severity-pill ${sevClass}">${escapeHtml(inc.severity || 'Minor')}</span>
+      filtered.forEach(road => {
+        const isHeavy = road.level === 'heavy';
+        const isMod = road.level === 'moderate';
+        const badgeClass = isHeavy ? 'heavy' : (isMod ? 'moderate' : 'clear');
+        const badgeLabel = isHeavy ? '🔴 Heavy' : (isMod ? '🔵 Moderate' : '🟢 Clear');
+
+        const card = document.createElement('div');
+        card.className = `road-item-card ${badgeClass}`;
+        card.innerHTML = `
+          <div class="road-item-header">
+            <span class="road-name">${road.name}</span>
+            <span class="traffic-badge ${badgeClass}">${badgeLabel}</span>
           </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; padding-top:8px; border-top:1px dashed #E2E8F0;">
-            <span style="font-size:11px; font-weight:600; color:${inc.status === 'Verified' ? '#059669' : '#D97706'};">
-              ● ${escapeHtml(inc.status || 'Reported')}
-            </span>
-            <div class="incident-action-group">
-              ${inc.status !== 'Verified' ? `<button onclick="verifyIncident('${id}')" class="admin-action-btn success" style="padding:4px 8px; font-size:11px;"><i class="fa-solid fa-check"></i> Verify</button>` : ''}
-              <button onclick="resolveIncident('${id}')" class="admin-action-btn danger" style="padding:4px 8px; font-size:11px;"><i class="fa-solid fa-trash"></i> Resolve</button>
-            </div>
+          <div class="road-metrics">
+            <span><i class="fa-solid fa-gauge-high"></i> Speed: <strong>${road.speed}</strong></span>
+            <span><i class="fa-solid fa-chart-pie"></i> Load: <strong>${road.congestion}</strong></span>
           </div>
+          <div style="font-size:11px; color:#64748B; margin-top:4px;">
+            <i class="fa-solid fa-brain" style="color:#7C3AED;"></i> <strong>Forecast:</strong> ${road.prediction} (${road.confidence})
+          </div>
+          <button class="focus-btn" onclick="focusOnRoad('${road.id}', event)">
+            <i class="fa-solid fa-crosshairs"></i> View on Map
+          </button>
         `;
-        container.appendChild(item);
-      });
-    }
 
-    // 2. Fetch Users from MongoDB /api/users
-    async function fetchUsersFromDB() {
-      const tbody = document.getElementById('accessMatrixBody');
-      try {
-        const res = await fetch('/api/users');
-        if (!res.ok) throw new Error('API offline');
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          liveUsers = json.data;
-        } else {
-          throw new Error('Invalid users data');
-        }
-      } catch (err) {
-        liveUsers = window.UrbanFlowData.getAccessMatrix();
-      }
-      renderUsers(liveUsers);
-    }
-
-    function renderUsers(users) {
-      const tbody = document.getElementById('accessMatrixBody');
-      tbody.innerHTML = '';
-      const badgeClass = { admin: 'admin', traffic_manager: 'authority', user: '' };
-
-      users.forEach(row => {
-        const id = row._id || '';
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><strong>${escapeHtml(row.displayName)}</strong></td>
-          <td><span class="hub-card-badge ${badgeClass[row.role] || ''}">${escapeHtml(row.roleTitle || row.role)}</span></td>
-          <td>${escapeHtml(row.accessLevel || 'Standard Access')}</td>
-          <td>${escapeHtml(row.permissions || 'Read only')}</td>
-          <td><span style="color:#059669; font-weight:600;">● ${escapeHtml(row.status || 'Active')}</span></td>
-          <td>
-            ${id ? `<button onclick="deleteUser('${id}')" class="admin-action-btn danger" style="padding:3px 8px; font-size:11px;"><i class="fa-solid fa-user-xmark"></i></button>` : '<span style="color:#94A3B8; font-size:11px;">Protected</span>'}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // 3. Fetch KPI Stats
-    async function fetchStatsFromDB() {
-      try {
-        const res = await fetch('/api/stats');
-        const json = await res.json();
-        if (json.success && json.data) {
-          document.getElementById('kpiActiveRoads').textContent = json.data.activeRoads;
-          document.getElementById('kpiHighCongestion').textContent = json.data.highCongestionSegments;
-          document.getElementById('adminIncCount').textContent = json.data.activeIncidents;
-          document.getElementById('kpiEmergencyUnits').textContent = json.data.emergencyUnits;
-        }
-      } catch (e) {
-        // keep defaults
-      }
-    }
-
-    // Verify Incident in MongoDB
-    async function verifyIncident(id) {
-      try {
-        await fetch('/api/incidents', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, status: 'Verified' })
+        card.addEventListener('click', (e) => {
+          if (!e.target.closest('.focus-btn')) {
+            focusOnRoad(road.id);
+          }
         });
-        showToast('Incident Verified', 'Status updated to Verified in MongoDB.');
-      } catch (err) {
-        showToast('Updated locally', 'Verified status saved in local session.');
-      }
-      refreshDashboardData();
-    }
 
-    // Resolve & Delete Incident in MongoDB
-    async function resolveIncident(id) {
-      if (!confirm('Resolve and remove this incident from MongoDB?')) return;
-      try {
-        await fetch(`/api/incidents?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-        showToast('Incident Resolved', 'Incident marked cleared and deleted from MongoDB.');
-      } catch (err) {
-        window.UrbanFlowData.deleteIncident(id);
-        showToast('Removed Locally', 'Incident removed from active display.');
-      }
-      refreshDashboardData();
-    }
-
-    // Delete User in MongoDB
-    async function deleteUser(id) {
-      if (!confirm('Revoke access and remove user from database?')) return;
-      try {
-        await fetch(`/api/users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-        showToast('Access Revoked', 'User operator removed from MongoDB.');
-      } catch (e) {
-        showToast('Notice', 'User session updated.');
-      }
-      fetchUsersFromDB();
-    }
-
-    // Status UI helper
-    function setDBStatus(isLive, message) {
-      const badge = document.getElementById('dbStatusBadge');
-      const text = document.getElementById('dbStatusText');
-      if (text) text.textContent = message;
-      if (!isLive && badge) {
-        badge.style.background = 'rgba(234, 179, 8, 0.15)';
-        badge.style.borderColor = '#EAB308';
-        badge.style.color = '#FACC15';
-      }
-    }
-
-    // Modals Handling
-    function openAddIncidentModal() {
-      document.getElementById('addIncidentModal').classList.add('open');
-    }
-    function openAddUserModal() {
-      document.getElementById('addUserModal').classList.add('open');
-    }
-    function closeModals() {
-      document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
-    }
-
-    function setupModalListeners() {
-      // Add Incident Form
-      document.getElementById('adminNewIncidentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const type = document.getElementById('modalIncType').value;
-        const road = document.getElementById('modalIncRoad').value.trim();
-        const severity = document.getElementById('modalIncSeverity').value;
-        const description = document.getElementById('modalIncDesc').value.trim();
-
-        const payload = {
-          title: `${type} at ${road}`,
-          type,
-          road,
-          severity,
-          description,
-          reportedBy: 'Central Admin',
-          status: 'Verified',
-          delayImpact: severity === 'Critical' ? '+15 min delay' : '+6 min delay'
-        };
-
-        try {
-          await fetch('/api/incidents', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          showToast('Saved to MongoDB', 'New incident broadcasted across all city nodes.');
-        } catch (err) {
-          window.UrbanFlowData.addIncident(payload);
-          showToast('Added to feed', 'Saved in local buffer.');
-        }
-
-        closeModals();
-        document.getElementById('adminNewIncidentForm').reset();
-        refreshDashboardData();
-      });
-
-      // Add User Form
-      document.getElementById('adminNewUserForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const displayName = document.getElementById('modalUserName').value.trim();
-        const role = document.getElementById('modalUserRole').value;
-        const permissions = document.getElementById('modalUserPerms').value.trim();
-
-        const payload = { displayName, role, permissions };
-
-        try {
-          await fetch('/api/users', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          showToast('User Registered', 'New operator registered in MongoDB RBAC table.');
-        } catch (err) {
-          showToast('Registered', 'User role added to current session.');
-        }
-
-        closeModals();
-        document.getElementById('adminNewUserForm').reset();
-        fetchUsersFromDB();
+        container.appendChild(card);
       });
     }
 
-    // Recalculate ML Forecast Simulation
-    function recalculateML() {
-      const btn = document.getElementById('recalcBtn');
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Processing...';
-      btn.disabled = true;
-
-      setTimeout(() => {
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> ML Model Synced';
-        btn.style.background = '#059669';
-        showToast('ML Predictions Recalculated', 'Random Forest & XGBoost model re-evaluated live sensor traffic weights.');
-        setTimeout(() => {
-          btn.innerHTML = '<i class="fa-solid fa-microchip"></i> Run Forecast';
-          btn.style.background = '#7C3AED';
-          btn.disabled = false;
-        }, 3000);
-      }, 1200);
+    // Focus on specific road on map when clicked in side panel
+    function focusOnRoad(roadId, event) {
+      if (event) event.stopPropagation();
+      const poly = roadPolylines[roadId];
+      if (poly) {
+        radarMap.fitBounds(poly.getBounds(), { padding: [60, 60], maxZoom: 15 });
+        poly.openPopup();
+      }
     }
 
-    function escapeHtml(str) {
-      return (str || '').replace(/[&<>'"]/g,
-        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+    // Filter Roads by Search Input
+    function filterRoads() {
+      const city = CITY_TRAFFIC_DATA[currentCityKey] || generateSyntheticCityTraffic(currentCityKey);
+      renderSidePanelRoads(city.roads);
+    }
+
+    // Filter Roads by Level Pill (All, Heavy, Moderate, Clear)
+    function setRoadFilter(level, btn) {
+      currentFilter = level;
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterRoads();
+    }
+
+    // Switch Preset City
+    function switchCity(cityKey, btn) {
+      document.querySelectorAll('.city-preset-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      document.getElementById('citySearchInput').value = CITY_TRAFFIC_DATA[cityKey] ? CITY_TRAFFIC_DATA[cityKey].name : cityKey;
+      document.getElementById('roadSearchInput').value = '';
+      loadCity(cityKey);
+    }
+
+    // Search any city via Input or Nominatim Geocoding
+    async function handleCitySearch() {
+      const input = document.getElementById('citySearchInput').value.trim();
+      if (!input) return;
+
+      const key = input.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      // Check if it's in our presets
+      if (CITY_TRAFFIC_DATA[key]) {
+        switchCity(key, null);
+        return;
+      }
+
+      // Look up preset matches
+      const foundPreset = Object.keys(CITY_TRAFFIC_DATA).find(k => 
+        CITY_TRAFFIC_DATA[k].name.toLowerCase() === input.toLowerCase() ||
+        k.includes(key) || key.includes(k)
       );
+
+      if (foundPreset) {
+        switchCity(foundPreset, null);
+        return;
+      }
+
+      // If it's a completely new city, geocode via OpenStreetMap Nominatim
+      const searchBtn = document.querySelector('.btn-search-city');
+      searchBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Locating City...';
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(input)}`);
+        const data = await res.json();
+
+        if (data && data.length > 0) {
+          const place = data[0];
+          const lat = parseFloat(place.lat);
+          const lon = parseFloat(place.lon);
+
+          const syntheticCity = generateSyntheticCityTraffic(input, [lat, lon]);
+          CITY_TRAFFIC_DATA[key] = syntheticCity;
+          loadCity(key, syntheticCity);
+
+          // Update active pill styling
+          document.querySelectorAll('.city-preset-btn').forEach(b => b.classList.remove('active'));
+        } else {
+          alert(`Could not locate "${input}". Showing default city network.`);
+        }
+      } catch (err) {
+        console.warn('Geocoding fallback:', err);
+      } finally {
+        searchBtn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Search City';
+      }
+    }
+
+    // Generate dynamic road lines for custom searched cities
+    function generateSyntheticCityTraffic(cityName, customCoords = null) {
+      const lat = customCoords ? customCoords[0] : 30.3398;
+      const lon = customCoords ? customCoords[1] : 76.3869;
+
+      return {
+        name: cityName,
+        state: 'India',
+        center: [lat, lon],
+        zoom: 13,
+        accuracy: `${(92 + Math.random() * 4).toFixed(1)}%`,
+        roads: [
+          {
+            id: 'syn1',
+            name: `${cityName} Central Express Highway`,
+            level: 'heavy',
+            speed: '14 km/h',
+            congestion: '88%',
+            confidence: '95%',
+            prediction: 'Heavy Commuter Influx',
+            description: 'Main arterial entry corridor into the city center.',
+            path: [
+              [lat - 0.015, lon - 0.02],
+              [lat - 0.005, lon - 0.008],
+              [lat + 0.008, lon + 0.005],
+              [lat + 0.018, lon + 0.022]
+            ]
+          },
+          {
+            id: 'syn2',
+            name: `${cityName} Metro Commercial Ring`,
+            level: 'heavy',
+            speed: '17 km/h',
+            congestion: '82%',
+            confidence: '92%',
+            prediction: 'Rising Congestion Peak',
+            description: 'Major transit and retail junction with high traffic density.',
+            path: [
+              [lat + 0.012, lon - 0.018],
+              [lat + 0.005, lon - 0.005],
+              [lat - 0.008, lon + 0.012]
+            ]
+          },
+          {
+            id: 'syn3',
+            name: `${cityName} Outer Bypass Corridor`,
+            level: 'moderate',
+            speed: '36 km/h',
+            congestion: '46%',
+            confidence: '90%',
+            prediction: 'Moderate Stable Flow',
+            description: 'Circumferential ring road with steady vehicle speed.',
+            path: [
+              [lat - 0.02, lon + 0.005],
+              [lat - 0.01, lon + 0.022],
+              [lat + 0.01, lon + 0.028]
+            ]
+          },
+          {
+            id: 'syn4',
+            name: `${cityName} Avenue West Link`,
+            level: 'moderate',
+            speed: '32 km/h',
+            congestion: '50%',
+            confidence: '89%',
+            prediction: 'Moderate Traffic Level',
+            description: 'Commercial and institutional connection boulevard.',
+            path: [
+              [lat + 0.02, lon - 0.005],
+              [lat + 0.008, lon - 0.015],
+              [lat - 0.005, lon - 0.025]
+            ]
+          },
+          {
+            id: 'syn5',
+            name: `${cityName} Green Belt Highway`,
+            level: 'clear',
+            speed: '58 km/h',
+            congestion: '14%',
+            confidence: '96%',
+            prediction: 'Uncongested / High Speed',
+            description: 'Suburban connector with unobstructed vehicle passage.',
+            path: [
+              [lat + 0.025, lon + 0.01],
+              [lat + 0.035, lon + 0.02],
+              [lat + 0.045, lon + 0.03]
+            ]
+          }
+        ]
+      };
     }
   </script>
 </body>
