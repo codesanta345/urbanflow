@@ -82,7 +82,11 @@
     <div class="hub-welcome">
       <div>
         <h1 id="tmPageTitle">Smart Signal Controller</h1>
-        <p id="tmPageSubtitle">👤 Logged in as: <strong class="active-user-name" style="color:#D97706;">Officer</strong> &bull; <span class="active-user-role">Traffic Authority</span> | Real-time approach demand balancing and signal timing optimization.</p>
+        <p id="tmPageSubtitle">👤 Logged in as: <strong class="active-user-name" style="color:#D97706;">Officer</strong> &bull; <span class="active-user-role">Traffic Authority</span> | Time-of-day demand simulation and signal timing optimization.</p>
+      </div>
+      <div id="tmPeriodBanner" style="text-align:right;">
+        <div style="font-size:13px; font-weight:700; color:#FBBF24;" id="tmPeriodHeadline">Current Traffic Period</div>
+        <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Clock-based traffic pattern simulation — not live sensors</div>
       </div>
     </div>
 
@@ -107,15 +111,15 @@
           <div>
             <h3 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 10px;">
               <i class="fa-solid fa-satellite-dish" style="color: var(--cyan-neon);"></i>
-              <span>Search Any Road Across India &bull; Live Signal Demand</span>
+              <span>Search Any Road Across India &bull; Period Signal Demand</span>
             </h3>
             <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">
-              Query any National Highway, arterial road, or junction across India to calculate real-time IRC demand &amp; optimal signal cycles.
+              Query any National Highway, arterial road, or junction across India. Demand and green splits follow the current local-time period (simulated patterns, not live sensors).
             </p>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <span class="hub-card-badge" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 11px;">
-              <i class="fa-solid fa-circle-dot" style="font-size: 8px;"></i> Live India Road Intelligence
+            <span class="hub-card-badge" style="background: rgba(245, 158, 11, 0.15); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.35); font-size: 11px;">
+              <i class="fa-solid fa-clock" style="font-size: 8px;"></i> Time-of-day simulation
             </span>
           </div>
         </div>
@@ -154,10 +158,10 @@
         <!-- Search Status / Spinner -->
         <div id="roadSearchLoading" style="display: none; margin-top: 14px; font-size: 13px; color: #38BDF8; align-items: center; gap: 8px;">
           <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <span>Querying Indian Roads Geospatial Network &amp; Computing Real-Time Demand Model...</span>
+          <span>Looking up the corridor and applying this time period's demand model...</span>
         </div>
 
-        <!-- Live Intelligence Result Banner -->
+        <!-- Corridor result banner -->
         <div id="roadResultBanner" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: var(--radius-sm); background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 14px;">
             <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0;">
@@ -320,6 +324,31 @@
       </div>
       <!-- end .signal-view-grid -->
 
+      <div class="admin-card" style="margin-top: 24px;">
+        <h3>
+          <span><i class="fa-solid fa-brain" style="color: var(--purple);"></i> Corridor ML Predictions</span>
+          <span style="font-size: 13px; color: #6B7280; font-weight: normal;" id="mlPeriodNote">Scaled to the current time period</span>
+        </h3>
+        <p style="font-size: 13px; color: var(--text-muted); margin: -8px 0 14px 0;">
+          Same roads as the existing ML table; congestion labels follow today's clock period. Simulated forecast — not a live traffic feed.
+        </p>
+        <div style="overflow-x: auto;">
+          <table class="algo-table">
+            <thead>
+              <tr>
+                <th>Road</th>
+                <th>Current</th>
+                <th>Predicted</th>
+                <th>Confidence</th>
+                <th>Trend</th>
+                <th>Peak Time</th>
+              </tr>
+            </thead>
+            <tbody id="tmMlTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
     <!-- end #signalView -->
 
@@ -357,6 +386,7 @@
   </main>
 
   <script src="data.js"></script>
+  <script src="traffic-time-sim.js"></script>
   <script src="script.js"></script>
   <script>
     const ALL_DIRECTIONS = ['north', 'south', 'east', 'west'];
@@ -511,6 +541,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       switchTmView(window.location.hash === '#incidents-queue' ? 'incidents' : 'signal');
+      refreshPeriodBanner();
+      renderMlPredictions();
       populateIntersectionSelect();
       checkEmergencyState();
       renderIncidentQueue();
@@ -539,19 +571,56 @@
         ? 'Smart Signal Controller'
         : 'Incident Verification & Dispatch Queue';
       document.getElementById('tmPageSubtitle').textContent = isSignal
-        ? 'Real-time approach demand balancing and signal timing optimization.'
+        ? 'Time-of-day demand simulation and signal timing optimization.'
         : 'Review citizen incident submissions, verify severity, and track them through to resolution.';
+
+      const periodBanner = document.getElementById('tmPeriodBanner');
+      if (periodBanner) periodBanner.style.display = isSignal ? '' : 'none';
+    }
+
+    function refreshPeriodBanner() {
+      const el = document.getElementById('tmPeriodHeadline');
+      if (el && window.UrbanFlowTimeSim) {
+        el.textContent = window.UrbanFlowTimeSim.getPeriodHeadline(new Date());
+      }
+    }
+
+    function renderMlPredictions() {
+      const tbody = document.getElementById('tmMlTableBody');
+      const note = document.getElementById('mlPeriodNote');
+      if (!tbody || !window.UrbanFlowTimeSim) return;
+      const period = window.UrbanFlowTimeSim.getCurrentPeriod(new Date());
+      if (note) note.textContent = 'Period: ' + period.label;
+      tbody.innerHTML = '';
+      window.UrbanFlowTimeSim.getMlPredictions(new Date()).forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(row.road)}</strong></td>
+          <td>${escapeHtml(row.current)}</td>
+          <td>${escapeHtml(row.predicted)}</td>
+          <td>${escapeHtml(row.confidence)}</td>
+          <td>${escapeHtml(row.trend)}</td>
+          <td>${escapeHtml(row.peakTime)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
     }
 
     // Lets the manager pick which intersection/area they're configuring,
     // including any dynamically searched Indian roads.
+    function withTimePeriodDemand(intersection) {
+      if (!intersection) return intersection;
+      if (!window.UrbanFlowTimeSim) return intersection;
+      return window.UrbanFlowTimeSim.applyToIntersection(intersection, new Date());
+    }
+
     function populateIntersectionSelect() {
       const select = document.getElementById('intersectionSelect');
       const intersections = window.UrbanFlowData.INTERSECTIONS;
 
       select.innerHTML = intersections.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
       select.value = intersections[0].id;
-      applyIntersectionPreset(intersections[0]);
+      applyIntersectionPreset(withTimePeriodDemand(intersections[0]));
     }
 
     function handleIntersectionChange() {
@@ -561,7 +630,7 @@
         || customIntersections.find(i => i.id === val);
       if (!intersection) return;
 
-      applyIntersectionPreset(intersection);
+      applyIntersectionPreset(withTimePeriodDemand(intersection));
       recalculateSignalTimings();
 
       const customMatch = customIntersections.find(i => i.id === val);
@@ -602,7 +671,7 @@
         );
 
         if (matchedDb) {
-          applyCustomRoadIntersection(matchedDb);
+          applyCustomRoadIntersection(withTimePeriodDemand(matchedDb));
           return;
         }
 
@@ -624,7 +693,7 @@
         }
 
         // 3. Compute accurate traffic data according to Indian Roads Congress (IRC) standards
-        const roadData = computeAccurateRoadTrafficData(query, geoResult);
+        const roadData = withTimePeriodDemand(computeAccurateRoadTrafficData(query, geoResult));
         applyCustomRoadIntersection(roadData);
 
       } catch (err) {
@@ -798,8 +867,10 @@
       const lonFmt = roadData.lon ? (Math.abs(roadData.lon).toFixed(4) + (roadData.lon >= 0 ? '° E' : '° W')) : '';
       const totalVeh = Object.values(roadData.vehicles).reduce((a, b) => a + b, 0);
 
+      const period = window.UrbanFlowTimeSim ? window.UrbanFlowTimeSim.getCurrentPeriod(new Date()) : null;
+      const periodNote = period ? ` &bull; Period: <strong style="color:#FBBF24;">${period.label}</strong>` : '';
       document.getElementById('resRoadMeta').innerHTML = 
-        `${latFmt ? `Coordinates: <strong style="color:#C4B5FD;">${latFmt}, ${lonFmt}</strong> &bull; ` : ''}Total Demand: <strong style="color:#34D399;">${totalVeh.toLocaleString()} veh/hr</strong> &bull; Traffic Tier: <strong style="color:#FBBF24;">${roadData.trafficTier}</strong>`;
+        `${latFmt ? `Coordinates: <strong style="color:#C4B5FD;">${latFmt}, ${lonFmt}</strong> &bull; ` : ''}Simulated demand: <strong style="color:#34D399;">${totalVeh.toLocaleString()} veh/hr</strong> &bull; Traffic tier: <strong style="color:#FBBF24;">${roadData.trafficTier}</strong>${periodNote}`;
       document.getElementById('resCycleLen').textContent = roadData.cycleLength;
     }
 
@@ -825,6 +896,9 @@
       // A direction can't be dragged past what's left over once every other
       // approach is holding down its own minimum green.
       const maxGreen = Math.max(minGreen + 5, currentCycleLength - minGreen * (currentApproaches.length - 1));
+      const demandGreens = window.UrbanFlowTimeSim
+        ? window.UrbanFlowTimeSim.greensFromDemand(intersection.vehicles, currentApproaches, currentCycleLength)
+        : null;
 
       approachBaseline = {};
       currentApproaches.forEach(dir => {
@@ -836,12 +910,14 @@
         else if (share >= 0.22) demandLabel = 'Moderate-High';
         else if (share >= 0.12) demandLabel = 'Low-Moderate';
 
+        const proportionalGreen = demandGreens
+          ? demandGreens[dir]
+          : Math.max(minGreen, Math.round(share * currentCycleLength));
+
         approachBaseline[dir] = {
           baseDemand,
-          // The green time this approach would get under a perfectly
-          // demand-proportional split — its queue/vehicle baseline (and the
-          // slider's starting position) is anchored to this.
-          baselineGreen: Math.max(minGreen, Math.round(share * currentCycleLength)),
+          // Green split is computed from this time period's vehicle demand.
+          baselineGreen: proportionalGreen,
           demandLabel,
           isHeavier: share >= avgShare
         };
@@ -943,8 +1019,15 @@
       document.getElementById('lightSouth').className = 'mini-light green';
       document.getElementById('lightEast').className = 'mini-light red';
       document.getElementById('lightWest').className = 'mini-light red';
+      currentApproaches.forEach(dir => {
+        const cap = dir.charAt(0).toUpperCase() + dir.slice(1);
+        const slider = document.getElementById('slider' + cap);
+        if (slider && approachBaseline[dir]) {
+          slider.value = approachBaseline[dir].baselineGreen;
+        }
+      });
       recalculateSignalTimings();
-      showToast('Adaptive Mode Restored', 'Signals are now optimizing dynamically based on vehicle count.');
+      showToast('Adaptive Mode Restored', 'Green times reset to this time period\'s demand split.');
     }
 
     function renderIncidentQueue() {

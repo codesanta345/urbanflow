@@ -52,6 +52,12 @@ const UrbanFlowData = (() => {
       roleTitle: COMMUTER_PROFILE.roleTitle,
       accessLevel: COMMUTER_PROFILE.accessLevel,
       permissions: COMMUTER_PROFILE.permissions
+    },
+    traffic_manager: {
+      role: 'traffic_manager',
+      roleTitle: 'Traffic Authority',
+      accessLevel: 'Traffic Operations',
+      permissions: 'Signal control, incident verification, live radar, emergency corridor'
     }
   };
 
