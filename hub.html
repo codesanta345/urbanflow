@@ -54,8 +54,8 @@
       </div>
     </div>
 
-    <!-- Quick Stats Overview Bar -->
-    <section class="stat-row">
+    <!-- Quick Stats Overview Bar (hidden for commuter / user role) -->
+    <section class="stat-row" id="hubStatsBar">
       <div class="stat-card purple-theme">
         <span class="stat-emoji">🟡</span>
         <div>
@@ -107,15 +107,6 @@
     const ROLE_FEATURES = {
       // 1. COMMUTER / DRIVER FEATURES
       'user': [
-        {
-          icon: '🛰️',
-          badge: 'Live Radar',
-          badgeClass: '',
-          title: 'Live City Traffic Radar',
-          desc: 'Search any city to view live road congestion maps with heavy traffic in Red and moderate traffic in Blue, plus speed analytics.',
-          actionText: 'Explore Traffic Radar',
-          link: 'admin-radar.html'
-        },
         {
           icon: '🗺️',
           badge: 'Navigation',
@@ -258,9 +249,14 @@
         subtext.textContent = 'Plan journeys, report incidents, and check live traffic conditions.';
       }
 
-      // Sync active incidents count
-      const incidents = window.UrbanFlowData.getIncidents();
-      document.getElementById('hubStatIncidents').textContent = `${incidents.length} Active`;
+      const statsBar = document.getElementById('hubStatsBar');
+      if (role === 'user') {
+        statsBar.style.display = 'none';
+      } else {
+        statsBar.style.display = '';
+        const incidents = window.UrbanFlowData.getIncidents();
+        document.getElementById('hubStatIncidents').textContent = `${incidents.length} Active`;
+      }
 
       // Render ONLY role-specific cards!
       const container = document.getElementById('roleFeaturesContainer');
