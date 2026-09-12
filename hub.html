@@ -139,6 +139,15 @@
       // 2. TRAFFIC AUTHORITY / MANAGER FEATURES
       'traffic_manager': [
         {
+          icon: '🛰️',
+          badge: 'Live Radar',
+          badgeClass: 'authority',
+          title: 'Live City Traffic Radar',
+          desc: 'Search any city to monitor real road networks with high-congestion corridors in Red and moderate segments in Blue.',
+          actionText: 'Launch Traffic Radar',
+          link: 'admin-radar.html'
+        },
+        {
           icon: '🚦',
           badge: 'Traffic Authority',
           badgeClass: 'authority',
@@ -241,11 +250,7 @@
       }
 
       const statsBar = document.getElementById('hubStatsBar');
-<<<<<<< HEAD
       if (role === 'user') {
-=======
-      if (role === 'user' || role === 'traffic_manager') {
->>>>>>> 41c612b (Updated UrbanFlow frontend and traffic simulation)
         statsBar.style.display = 'none';
       } else {
         statsBar.style.display = '';
