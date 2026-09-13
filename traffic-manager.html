@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traffic Manager Dashboard | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .road-search-card {
+      background: #141524;
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    .road-quick-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #E2E8F0;
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .road-quick-chip:hover {
+      background: rgba(139, 92, 246, 0.25);
+      border-color: var(--purple-vibrant);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .road-quick-chip.active {
+      background: rgba(139, 92, 246, 0.35);
+      border-color: var(--cyan-neon);
+      color: #fff;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="hub.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role" style="background: rgba(217, 119, 6, 0.3); border: 1px solid rgba(217, 119, 6, 0.5);">
+      Traffic Authority Console
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <a href="hub.html" class="nav-btn-icon">
+        <i class="fa-solid fa-grid-2"></i> Feature Hub
+      </a>
+      <a href="admin.html" class="nav-btn-icon" id="navAdminViewLink" style="display:none;">
+        <i class="fa-solid fa-gear"></i> Admin View
+      </a>
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar" style="background:#F59E0B;">U</div>
+          <span id="navUserName">User</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Traffic Authority Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN TRAFFIC AUTHORITY DASHBOARD ===== -->
+  <main class="hub-main">
+    <div class="hub-welcome">
+      <div>
+        <h1 id="tmPageTitle">Smart Signal Controller</h1>
+        <div id="trafficTimePanel" style="margin-top:10px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+  <span style="font-size:14px; color:#CBD5E1;">
+    <i class="fa-regular fa-clock" style="color:var(--cyan-neon);"></i>
+    Current Time:
+    <strong id="currentTrafficTime" style="color:#fff;">--:--:--</strong>
+  </span>
+
+<span id="currentTrafficPeriod"
+     style="padding:5px 12px; border-radius:999px; background:rgba(139,92,246,.18); border:1px solid rgba(139,92,246,.35); color:#C4B5FD; font-size:12px; font-weight:700;">
+Loading... </span>
+
+  <span style="font-size:11px; color:#94A3B8;">
+    Time-based traffic simulation
+  </span>
+</div>
+
+        <p id="tmPageSubtitle">👤 Logged in as: <strong class="active-user-name" style="color:#D97706;">Officer</strong> &bull; <span class="active-user-role">Traffic Authority</span> | Real-time approach demand balancing and signal timing optimization.</p>
+      </div>
+    </div>
+
+    <!-- ===== SIGNAL CONTROL VIEW ===== -->
+    <div id="signalView">
+
+      <!-- Active Emergency Alert Banner (if active) -->
+      <div id="tmEmergencyNotice" style="display:none; margin-bottom: 24px; background: #FEE2E2; border: 2px solid #EF4444; border-radius: var(--radius-md); padding: 16px 20px; color: #991B1B; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 24px;">🚨</span>
+          <div>
+            <h4 style="font-size: 15px; font-weight: 700; margin: 0;">EMERGENCY PREEMPTION ACTIVE</h4>
+            <p style="font-size: 13px; margin: 0;">An emergency vehicle is on corridor. Approach signal timings are locked to priority green.</p>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="resetEmergencyPreemption()">Reset Override</button>
+      </div>
+
+      <!-- ===== INDIA-WIDE ROAD SEARCH & LIVE TRAFFIC INTELLIGENCE ===== -->
+      <div class="road-search-card">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+          <div>
+            <h3 style="font-size: 17px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 10px;">
+              <i class="fa-solid fa-satellite-dish" style="color: var(--cyan-neon);"></i>
+              <span>Search Any Road Across India &bull; Live Signal Demand</span>
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 4px 0 0 0;">
+              Query any National Highway, arterial road, or junction across India to calculate real-time IRC demand &amp; optimal signal cycles.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <span class="hub-card-badge" style="background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 11px;">
+              <i class="fa-solid fa-circle-dot" style="font-size: 8px;"></i> Live India Road Intelligence
+            </span>
+          </div>
+        </div>
+
+        <!-- Search Bar & Controls -->
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <div style="position: relative; flex: 1; min-width: 280px;">
+            <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9CA3AF; pointer-events: none;"></i>
+            <input type="text" id="roadSearchInput" placeholder="Enter any road, highway, or chowk (e.g., MG Road Bengaluru, Western Express Hwy Mumbai, Ring Road Delhi)..." 
+                   style="width: 100%; padding: 12px 14px 12px 40px; border-radius: var(--radius-sm); background: #0B0C16; border: 1px solid rgba(255,255,255,0.14); color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                   onkeydown="if(event.key==='Enter') searchIndiaRoad()"
+                   onfocus="this.style.borderColor='var(--purple)'"
+                   onblur="this.style.borderColor='rgba(255,255,255,0.14)'">
+          </div>
+          <button type="button" class="btn-primary" onclick="searchIndiaRoad()" id="btnSearchRoad" style="padding: 12px 22px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+            <i class="fa-solid fa-radar"></i>
+            <span>Analyze Signal</span>
+          </button>
+        </div>
+
+        <!-- Popular Indian Roads Quick Selection Chips -->
+        <div style="margin-top: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Quick Corridors:</span>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('MG Road, Bengaluru')">MG Road (Bengaluru)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('Western Express Highway, Mumbai')">Western Express Hwy (Mumbai)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('Ring Road, Delhi')">Ring Road (Delhi)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('Anna Salai, Chennai')">Anna Salai (Chennai)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('Park Street, Kolkata')">Park Street (Kolkata)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('Hitec City Road, Hyderabad')">Hitec City (Hyderabad)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('FC Road, Pune')">FC Road (Pune)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('Connaught Place, Delhi')">Connaught Place (Delhi)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('SG Highway, Ahmedabad')">SG Highway (Ahmedabad)</button>
+          <button type="button" class="road-quick-chip" onclick="quickSelectRoad('NH-44 Corridor')">NH-44 Corridor</button>
+        </div>
+
+        <!-- Search Status / Spinner -->
+        <div id="roadSearchLoading" style="display: none; margin-top: 14px; font-size: 13px; color: #38BDF8; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <span>Querying Indian Roads Geospatial Network &amp; Computing Real-Time Demand Model...</span>
+        </div>
+
+        <!-- Live Intelligence Result Banner -->
+        <div id="roadResultBanner" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: var(--radius-sm); background: rgba(139, 92, 246, 0.12); border: 1px solid rgba(139, 92, 246, 0.3); align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--purple); display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff; flex-shrink: 0;">
+              <i class="fa-solid fa-road"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <h4 id="resRoadName" style="font-size: 15px; font-weight: 700; color: #fff; margin: 0;">Road Name</h4>
+                <span id="resRoadBadge" class="hub-card-badge" style="background: rgba(14, 165, 233, 0.2); color: #38BDF8; font-size: 11px;">Primary Corridor</span>
+                <span id="resStateBadge" class="hub-card-badge" style="background: rgba(245, 158, 11, 0.2); color: #FBBF24; font-size: 11px;">India</span>
+              </div>
+              <p id="resRoadMeta" style="font-size: 12px; color: #9CA3AF; margin: 4px 0 0 0;">
+                Coordinates: 12.9716° N, 77.5946° E &bull; Total Demand: 1,450 veh/hr &bull; Traffic Tier: Heavy Peak
+              </p>
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 11px; color: #A78BFA; text-transform: uppercase; font-weight: 700;">Optimal Cycle Length</div>
+            <div style="font-size: 20px; font-weight: 800; color: var(--cyan-neon);"><span id="resCycleLen">115</span>s <span style="font-size: 12px; color: #9CA3AF; font-weight: 400;">Webster Split</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMART SIGNAL LOGIC (PDF Figure 5) -->
+      <div class="signal-view-grid">
+
+      <!-- Left: Interactive Intersection Box Diagram -->
+      <div class="signal-diagram-card">
+        <h3>Smart Traffic Signal Logic</h3>
+        <p>Drag an approach's green time to see its vehicle backlog respond — more green clears the queue faster, less green lets it build up</p>
+
+        <div class="input-group" style="margin-bottom: 16px;">
+          <label><i class="fa-solid fa-map-pin" style="color: var(--purple-vibrant);"></i> Select Intersection / Area</label>
+          <select id="intersectionSelect" onchange="handleIntersectionChange()"></select>
+        </div>
+
+        <div class="intersection-box">
+          <!-- Road Crossings -->
+          <div class="road-horizontal"></div>
+          <div class="road-vertical"></div>
+
+          <!-- Intersection Center with Signal Indicators -->
+          <div class="intersection-center">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <span class="mini-light green" id="lightNorth" title="North Signal"></span>
+              <span class="mini-light red" id="lightEast" title="East Signal"></span>
+              <span class="mini-light green" id="lightSouth" title="South Signal"></span>
+              <span class="mini-light red" id="lightWest" title="West Signal"></span>
+            </div>
+          </div>
+
+          <!-- North Approach Tag -->
+          <div class="approach-tag north" id="approachTagNorth">
+            <div>North Approach</div>
+            <div class="approach-count" id="diagNorthCount">800 vehicles</div>
+            <div class="approach-green-time" id="diagNorthGreen">Green: 45s</div>
+          </div>
+
+          <!-- South Approach Tag -->
+          <div class="approach-tag south" id="approachTagSouth">
+            <div>South Approach</div>
+            <div class="approach-count" id="diagSouthCount">650 vehicles</div>
+            <div class="approach-green-time" id="diagSouthGreen">Green: 35s</div>
+          </div>
+
+          <!-- East Approach Tag -->
+          <div class="approach-tag east" id="approachTagEast">
+            <div>East Approach</div>
+            <div class="approach-count" id="diagEastCount">200 vehicles</div>
+            <div class="approach-green-time" id="diagEastGreen" style="color:#EF4444;">Green: 15s</div>
+          </div>
+
+          <!-- West Approach Tag -->
+          <div class="approach-tag west" id="approachTagWest">
+            <div>West Approach</div>
+            <div class="approach-count" id="diagWestCount">150 vehicles</div>
+            <div class="approach-green-time" id="diagWestGreen" style="color:#EF4444;">Green: 15s</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; font-size: 13px; color: #6B7280;">
+          <strong>Intersection:</strong> <span id="diagIntersectionName">Phase 7 Interchange</span> &bull;
+          <strong>Type:</strong> <span id="diagJunctionType">4-Way</span> &bull;
+          <strong>Cycle Time:</strong> <span id="diagCycleTime">110</span> seconds
+        </div>
+      </div>
+
+      <!-- Right: Real-time Green Time Allocation & Controls -->
+      <div class="signal-controls-card">
+        <h3>Adaptive Timing Allocation</h3>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: -8px; margin-bottom: 16px;">
+          Now configuring: <strong id="controlsIntersectionName" style="color: #C4B5FD;">Phase 7 Interchange</strong>
+        </p>
+
+        <!-- North Row -->
+        <div class="approach-control-row" id="rowNorth">
+          <div class="appr-info">
+            <h4>North Direction <span id="demandNorth" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
+            <span id="txtNorthVehicles">800 vehicles &bull; Queue: 120m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderNorth" min="10" max="80" value="49" oninput="recalculateSignalTimings()">
+            <span class="appr-badge green" id="badgeNorthGreen">45s Green</span>
+          </div>
+        </div>
+
+        <!-- South Row -->
+        <div class="approach-control-row" id="rowSouth">
+          <div class="appr-info">
+            <h4>South Direction <span id="demandSouth" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
+            <span id="txtSouthVehicles">650 vehicles &bull; Queue: 85m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderSouth" min="10" max="80" value="40" oninput="recalculateSignalTimings()">
+            <span class="appr-badge green" id="badgeSouthGreen">35s Green</span>
+          </div>
+        </div>
+
+        <!-- East Row -->
+        <div class="approach-control-row" id="rowEast">
+          <div class="appr-info">
+            <h4>East Direction <span id="demandEast" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
+            <span id="txtEastVehicles">200 vehicles &bull; Queue: 30m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderEast" min="10" max="80" value="12" oninput="recalculateSignalTimings()">
+            <span class="appr-badge red" id="badgeEastGreen">15s Green</span>
+          </div>
+        </div>
+
+        <!-- West Row -->
+        <div class="approach-control-row" id="rowWest">
+          <div class="appr-info">
+            <h4>West Direction <span id="demandWest" style="font-weight: 400; font-size: 12px; color: #9CA3AF;"></span></h4>
+            <span id="txtWestVehicles">150 vehicles &bull; Queue: 20m</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="range" id="sliderWest" min="10" max="80" value="10" oninput="recalculateSignalTimings()">
+            <span class="appr-badge red" id="badgeWestGreen">15s Green</span>
+          </div>
+        </div>
+
+        <!-- Signal Manual Overrides -->
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #E5E7EB;">
+          <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 10px;">Manual Signal Overrides:</h4>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-secondary" style="background:#EDE9FE; color:var(--purple); border:none; padding:8px 16px; font-size:13px;" onclick="forcePhase('north-south')">
+              Force Green N-S
+            </button>
+            <button class="btn-secondary" style="background:#EDE9FE; color:var(--purple); border:none; padding:8px 16px; font-size:13px;" onclick="forcePhase('east-west')">
+              Force Green E-W
+            </button>
+            <button class="btn-primary" style="padding:8px 16px; font-size:13px;" onclick="resetAdaptiveMode()">
+              Auto Adaptive Mode
+            </button>
+          </div>
+        </div>
+      </div>
+
+      </div>
+      <!-- end .signal-view-grid -->
+
+    </div>
+    <!-- end #signalView -->
+
+    <!-- ===== INCIDENT VERIFICATION VIEW ===== -->
+    <div id="incidentView" style="display:none;">
+      <div id="incidents-queue">
+        <div class="admin-card">
+          <h3>
+            <span><i class="fa-solid fa-list-check" style="color: var(--purple);"></i> Incident Verification & Dispatch Queue</span>
+            <span style="font-size: 13px; color: #6B7280; font-weight: normal;">Live Citizen Submissions</span>
+          </h3>
+
+          <div style="overflow-x: auto;">
+            <table class="algo-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Severity</th>
+                  <th>Reported At</th>
+                  <th>Current Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tmIncidentTableBody">
+                <!-- Injected dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+  
+
+  const ALL_DIRECTIONS = ['north', 'south', 'east', 'west'];
+
+  let currentCycleLength = 110;
+  let currentApproaches = ALL_DIRECTIONS;
+  let approachBaseline = {};
+  let customIntersections = [];
+
+  // =========================================================
+  // TIME-BASED TRAFFIC SIMULATION
+  // =========================================================
+
+  /*
+    Traffic factor changes smoothly throughout the day.
+
+    00:00 - 05:59  = Very Low
+    06:00 - 08:59  = Morning Peak
+    09:00 - 11:59  = Morning
+    12:00 - 15:59  = Afternoon
+    16:00 - 18:59  = Evening Peak
+    19:00 - 21:59  = Evening
+    22:00 - 23:59  = Night
+  */
+
+  const TRAFFIC_PERIODS = [
+    {
+      name: 'Night',
+      start: 0,
+      end: 6,
+      factor: 0.45
+    },
+    {
+      name: 'Morning Peak',
+      start: 6,
+      end: 9,
+      factor: 1.35
+    },
+    {
+      name: 'Morning',
+      start: 9,
+      end: 12,
+      factor: 1.05
+    },
+    {
+      name: 'Afternoon',
+      start: 12,
+      end: 16,
+      factor: 0.82
+    },
+    {
+      name: 'Evening Peak',
+      start: 16,
+      end: 19,
+      factor: 1.45
+    },
+    {
+      name: 'Evening',
+      start: 19,
+      end: 22,
+      factor: 1.00
+    },
+    {
+      name: 'Night',
+      start: 22,
+      end: 24,
+      factor: 0.45
+    }
+  ];
+
+
+  // ---------------------------------------------------------
+  // Get current traffic period
+  // ---------------------------------------------------------
+
+  function getCurrentTrafficPeriod() {
+    const hour = new Date().getHours();
+
+    return TRAFFIC_PERIODS.find(period =>
+      hour >= period.start && hour < period.end
+    ) || TRAFFIC_PERIODS[0];
+  }
+
+
+  // ---------------------------------------------------------
+  // Smooth time-based traffic factor
+  // ---------------------------------------------------------
+
+  function getTrafficFactor() {
+    const now = new Date();
+
+    const hour = now.getHours();
+    const minutes = now.getMinutes();
+
+    const decimalHour = hour + (minutes / 60);
+
+    /*
+      Smooth transitions between traffic periods.
+      This prevents the traffic count from suddenly jumping
+      when the clock changes from 8:59 to 9:00.
+    */
+
+    if (decimalHour >= 0 && decimalHour < 6) {
+      return 0.45;
+    }
+
+    if (decimalHour >= 6 && decimalHour < 9) {
+      // 6 AM -> 9 AM
+      // 1.10 -> 1.35
+      return 1.10 + ((decimalHour - 6) / 3) * 0.25;
+    }
+
+    if (decimalHour >= 9 && decimalHour < 12) {
+      // 9 AM -> 12 PM
+      // 1.05 -> 0.90
+      return 1.05 - ((decimalHour - 9) / 3) * 0.15;
+    }
+
+    if (decimalHour >= 12 && decimalHour < 16) {
+      // 12 PM -> 4 PM
+      // 0.82 -> 1.00
+      return 0.82 + ((decimalHour - 12) / 4) * 0.18;
+    }
+
+    if (decimalHour >= 16 && decimalHour < 19) {
+      // 4 PM -> 7 PM
+      // 1.15 -> 1.45 -> 1.25
+      const progress = (decimalHour - 16) / 3;
+
+      if (progress <= 0.5) {
+        return 1.15 + progress * 0.60;
+      }
+
+      return 1.45 - (progress - 0.5) * 0.40;
+    }
+
+    if (decimalHour >= 19 && decimalHour < 22) {
+      // 7 PM -> 10 PM
+      // 1.10 -> 0.85
+      return 1.10 - ((decimalHour - 19) / 3) * 0.25;
+    }
+
+    // 10 PM -> midnight
+    return 0.65 - ((decimalHour - 22) / 2) * 0.20;
+  }
+
+
+  // ---------------------------------------------------------
+  // Calculate time-adjusted vehicles
+  // ---------------------------------------------------------
+
+  function getTimeAdjustedVehicles(baseVehicles) {
+    const factor = getTrafficFactor();
+
+    const adjusted = {};
+
+    Object.keys(baseVehicles).forEach(direction => {
+      adjusted[direction] = Math.max(
+        1,
+        Math.round(baseVehicles[direction] * factor)
+      );
+    });
+
+    return adjusted;
+  }
+
+
+  // =========================================================
+  // LIVE CLOCK
+  // =========================================================
+
+  function updateTrafficClock() {
+    const now = new Date();
+    const period = getCurrentTrafficPeriod();
+
+    const timeEl =
+      document.getElementById('currentTrafficTime');
+
+    const periodEl =
+      document.getElementById('currentTrafficPeriod');
+
+    if (timeEl) {
+      timeEl.textContent = now.toLocaleTimeString('en-IN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      });
+    }
+
+    if (periodEl) {
+      periodEl.textContent = `🚦 ${period.name}`;
+    }
+  }
+
+
+  // =========================================================
+  // REFRESH TRAFFIC DATA
+  // =========================================================
+
+  function refreshTimeBasedTrafficData() {
+
+    const select =
+      document.getElementById('intersectionSelect');
+
+    if (!select || !select.value) {
+      return;
+    }
+
+    const intersection =
+      window.UrbanFlowData.INTERSECTIONS.find(
+        i => i.id === select.value
+      ) ||
+      customIntersections.find(
+        i => i.id === select.value
+      );
+
+    if (!intersection) {
+      return;
+    }
+
+    /*
+      Re-apply the intersection using the current
+      time-based traffic demand.
+    */
+
+    applyIntersectionPreset(intersection);
+
+    /*
+      If this is a searched road, refresh its
+      intelligence banner as well.
+    */
+
+    if (
+      customIntersections.some(
+        i => i.id === intersection.id
+      )
+    ) {
+      displayRoadResultBanner(intersection);
+    }
+
+    updateTrafficClock();
+  }
+
+
+  // =========================================================
+  // START LIVE TRAFFIC CLOCK
+  // =========================================================
+
+  let lastTrafficPeriod = '';
+
+  function startTrafficClock() {
+
+    updateTrafficClock();
+
+    lastTrafficPeriod =
+      getCurrentTrafficPeriod().name;
+
+    setInterval(() => {
+
+      updateTrafficClock();
+
+      const currentPeriod =
+        getCurrentTrafficPeriod().name;
+
+      /*
+        Recalculate every 60 seconds so the traffic
+        demand gradually changes with the time.
+      */
+
+      refreshTimeBasedTrafficData();
+
+      /*
+        Show notification only when the traffic period
+        itself changes.
+      */
+
+      if (currentPeriod !== lastTrafficPeriod) {
+
+        lastTrafficPeriod = currentPeriod;
+
+        showToast(
+          'Traffic Period Updated',
+          `Traffic data changed to ${currentPeriod} conditions.`
+        );
+      }
+
+    }, 60000);
+  }
+
+
+  // =========================================================
+  // INDIA ROAD DATABASE
+  // =========================================================
+
+  const INDIA_ROAD_DATABASE = [
+    {
+      id: 'road_mg_blr',
+      name: 'Mahatma Gandhi (MG) Road, Bengaluru, Karnataka',
+      shortName: 'MG Road, Bengaluru',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      lat: 12.9756,
+      lon: 77.6066,
+      category: 'Major Urban Arterial (IRC Class-A)',
+      trafficTier: 'Heavy Peak Commercial Flow',
+      cycleLength: 120,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 920,
+        south: 880,
+        east: 640,
+        west: 590
+      }
+    },
+
+    {
+      id: 'road_weh_mum',
+      name: 'Western Express Highway (WEH), Mumbai, Maharashtra',
+      shortName: 'Western Express Hwy, Mumbai',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      lat: 19.0880,
+      lon: 72.8530,
+      category: 'High-Capacity Urban Expressway (Tier-1)',
+      trafficTier: 'Severe Corridor Saturation',
+      cycleLength: 130,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 1650,
+        south: 1580,
+        east: 420,
+        west: 460
+      }
+    },
+
+    {
+      id: 'road_ring_del',
+      name: 'Mahatma Gandhi Ring Road, New Delhi',
+      shortName: 'Ring Road, Delhi',
+      city: 'New Delhi',
+      state: 'Delhi NCR',
+      lat: 28.5800,
+      lon: 77.2100,
+      category: 'Major Orbital Arterial Expressway',
+      trafficTier: 'Heavy Inbound/Outbound Peak',
+      cycleLength: 125,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 1420,
+        south: 1390,
+        east: 780,
+        west: 740
+      }
+    },
+
+    {
+      id: 'road_anna_che',
+      name: 'Anna Salai (Mount Road Corridor), Chennai, Tamil Nadu',
+      shortName: 'Anna Salai, Chennai',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      lat: 13.0604,
+      lon: 80.2496,
+      category: 'Principal Arterial Spine (IRC Tier-1)',
+      trafficTier: 'Dense Mixed Commercial & Bus Transit',
+      cycleLength: 115,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 890,
+        south: 860,
+        east: 530,
+        west: 510
+      }
+    },
+
+    {
+      id: 'road_park_kol',
+      name: 'Park Street (Mother Teresa Sarani), Kolkata, West Bengal',
+      shortName: 'Park Street, Kolkata',
+      city: 'Kolkata',
+      state: 'West Bengal',
+      lat: 22.5511,
+      lon: 88.3526,
+      category: 'Metropolitan Commercial Core Spine',
+      trafficTier: 'High Pedestrian & Vehicle Interlock',
+      cycleLength: 105,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 720,
+        south: 680,
+        east: 590,
+        west: 550
+      }
+    },
+
+    {
+      id: 'road_hitec_hyd',
+      name: 'Hitec City Main Road, Cyberabad, Hyderabad, Telangana',
+      shortName: 'Hitec City Road, Hyderabad',
+      city: 'Hyderabad',
+      state: 'Telangana',
+      lat: 17.4474,
+      lon: 78.3762,
+      category: 'Technology Corridor Arterial',
+      trafficTier: 'High Peak Commuter Density',
+      cycleLength: 120,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 1100,
+        south: 1050,
+        east: 610,
+        west: 580
+      }
+    },
+
+    {
+      id: 'road_fc_pun',
+      name: 'Fergusson College (FC) Road, Shivajinagar, Pune, Maharashtra',
+      shortName: 'FC Road, Pune',
+      city: 'Pune',
+      state: 'Maharashtra',
+      lat: 18.5283,
+      lon: 73.8415,
+      category: 'Urban Radial Commercial Corridor',
+      trafficTier: 'Dense Two-Wheeler & City Bus Flow',
+      cycleLength: 100,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 680,
+        south: 640,
+        east: 430,
+        west: 390
+      }
+    },
+
+    {
+      id: 'road_cp_del',
+      name: 'Connaught Place Outer Circle / Barakhamba Rd, New Delhi',
+      shortName: 'Connaught Place, Delhi',
+      city: 'New Delhi',
+      state: 'Delhi NCR',
+      lat: 28.6315,
+      lon: 77.2167,
+      category: 'Radial Commercial Interchange (Rotary)',
+      trafficTier: 'Continuous High Hub Circulation',
+      cycleLength: 115,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 980,
+        south: 940,
+        east: 730,
+        west: 700
+      }
+    },
+
+    {
+      id: 'road_sg_ahm',
+      name: 'Sarkhej–Gandhinagar (SG) Highway, Ahmedabad, Gujarat',
+      shortName: 'SG Highway, Ahmedabad',
+      city: 'Ahmedabad',
+      state: 'Gujarat',
+      lat: 23.0525,
+      lon: 72.5115,
+      category: 'State Express Corridor (IRC Tier-1)',
+      trafficTier: 'Heavy Multi-Lane Intercity Arterial',
+      cycleLength: 125,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 1350,
+        south: 1280,
+        east: 510,
+        west: 480
+      }
+    },
+
+    {
+      id: 'road_nh44_cor',
+      name: 'National Highway 44 (NH-44) Pan-India Corridor Section',
+      shortName: 'NH-44 Corridor',
+      city: 'National Highway',
+      state: 'Northern/Pan-India',
+      lat: 28.7041,
+      lon: 77.1025,
+      category: 'National Highway Grade Expressway',
+      trafficTier: 'Heavy Freight & Long-Distance Transit',
+      cycleLength: 135,
+      approaches: ['north', 'south', 'east', 'west'],
+      vehicles: {
+        north: 1750,
+        south: 1680,
+        east: 350,
+        west: 320
+      }
+    }
+  ];
+
+
+  // =========================================================
+  // PAGE INITIALIZATION
+  // =========================================================
+
+  document.addEventListener('DOMContentLoaded', () => {
+
+    switchTmView(
+      window.location.hash === '#incidents-queue'
+        ? 'incidents'
+        : 'signal'
+    );
+
+    populateIntersectionSelect();
+
+    checkEmergencyState();
+
+    renderIncidentQueue();
+
+    recalculateSignalTimings();
+
+    // Start live clock and time-based traffic updates
+    startTrafficClock();
+
+
+    const user =
+      window.UrbanFlowData.getCurrentUser();
+
+    if (
+      user &&
+      user.role === 'admin'
+    ) {
+      document.getElementById(
+        'navAdminViewLink'
+      ).style.display = '';
+    }
+  });
+
+
+  // =========================================================
+  // VIEW SWITCHING
+  // =========================================================
+
+  function switchTmView(view) {
+
+    const isSignal =
+      view === 'signal';
+
+    document.getElementById(
+      'signalView'
+    ).style.display =
+      isSignal ? '' : 'none';
+
+    document.getElementById(
+      'incidentView'
+    ).style.display =
+      isSignal ? 'none' : '';
+
+    document.getElementById(
+      'tmPageTitle'
+    ).textContent =
+      isSignal
+        ? 'Smart Signal Controller'
+        : 'Incident Verification & Dispatch Queue';
+
+    document.getElementById(
+      'tmPageSubtitle'
+    ).textContent =
+      isSignal
+        ? 'Real-time approach demand balancing and signal timing optimization.'
+        : 'Review citizen incident submissions, verify severity, and track them through to resolution.';
+  }
+
+
+  // =========================================================
+  // INTERSECTION SELECT
+  // =========================================================
+
+  function populateIntersectionSelect() {
+
+    const select =
+      document.getElementById(
+        'intersectionSelect'
+      );
+
+    const intersections =
+      window.UrbanFlowData.INTERSECTIONS;
+
+    select.innerHTML =
+      intersections.map(i =>
+        `<option value="${i.id}">
+          ${i.name}
+        </option>`
+      ).join('');
+
+    select.value =
+      intersections[0].id;
+
+    applyIntersectionPreset(
+      intersections[0]
+    );
+  }
+
+
+  function handleIntersectionChange() {
+
+    const select =
+      document.getElementById(
+        'intersectionSelect'
+      );
+
+    const val =
+      select.value;
+
+    const intersection =
+      window.UrbanFlowData.INTERSECTIONS.find(
+        i => i.id === val
+      ) ||
+      customIntersections.find(
+        i => i.id === val
+      );
+
+    if (!intersection) {
+      return;
+    }
+
+    applyIntersectionPreset(
+      intersection
+    );
+
+    recalculateSignalTimings();
+
+    const customMatch =
+      customIntersections.find(
+        i => i.id === val
+      );
+
+    if (customMatch) {
+
+      displayRoadResultBanner(
+        customMatch
+      );
+
+    } else {
+
+      document.getElementById(
+        'roadResultBanner'
+      ).style.display = 'none';
+
+      document
+        .querySelectorAll(
+          '.road-quick-chip'
+        )
+        .forEach(c =>
+          c.classList.remove('active')
+        );
+    }
+
+    showToast(
+      'Intersection Switched',
+      `Now configuring ${intersection.name}.`
+    );
+  }
+
+
+  // =========================================================
+  // ROAD SEARCH
+  // =========================================================
+
+  async function searchIndiaRoad() {
+
+    const input =
+      document.getElementById(
+        'roadSearchInput'
+      );
+
+    const query =
+      (input.value || '').trim();
+
+    if (!query) {
+
+      showToast(
+        'Road Search',
+        'Please enter a road, junction, or highway name in India.'
+      );
+
+      input.focus();
+
+      return;
+    }
+
+    const loadingEl =
+      document.getElementById(
+        'roadSearchLoading'
+      );
+
+    const btn =
+      document.getElementById(
+        'btnSearchRoad'
+      );
+
+    loadingEl.style.display = 'flex';
+
+    btn.disabled = true;
+
+    try {
+
+      const qClean =
+        query.toLowerCase();
+
+      // Check local database first
+      const matchedDb =
+        INDIA_ROAD_DATABASE.find(r =>
+          r.name.toLowerCase().includes(qClean) ||
+          r.shortName.toLowerCase().includes(qClean) ||
+          qClean.includes(
+            r.shortName.toLowerCase()
+          ) ||
+          (
+            r.city.toLowerCase() !==
+            'national highway' &&
+            qClean.includes(
+              r.city.toLowerCase()
+            ) &&
+            (
+              qClean.includes('road') ||
+              qClean.includes('highway') ||
+              qClean.includes('chowk') ||
+              qClean.includes('marg') ||
+              qClean.includes('salai')
+            )
+          )
+        );
+
+      if (matchedDb) {
+
+        applyCustomRoadIntersection(
+          matchedDb
+        );
+
+        return;
+      }
+
+
+      // OpenStreetMap lookup
+      let geoResult = null;
+
+      try {
+
+        const searchQuery =
+          query.toLowerCase().includes('india')
+            ? query
+            : `${query}, India`;
+
+        const res =
+          await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=in&limit=1&q=${encodeURIComponent(searchQuery)}`,
+            {
+              headers: {
+                'Accept-Language': 'en'
+              }
+            }
+          );
+
+        if (res.ok) {
+
+          const data =
+            await res.json();
+
+          if (
+            data &&
+            data.length > 0
+          ) {
+            geoResult =
+              data[0];
+          }
+        }
+
+      } catch (netErr) {
+
+        console.warn(
+          'Network lookup unavailable:',
+          netErr
+        );
+      }
+
+
+      const roadData =
+        computeAccurateRoadTrafficData(
+          query,
+          geoResult
+        );
+
+      applyCustomRoadIntersection(
+        roadData
+      );
+
+    } catch (err) {
+
+      console.error(
+        'Error analyzing road:',
+        err
+      );
+
+      showToast(
+        'Error',
+        'Unable to complete road search. Please try again.'
+      );
+
+    } finally {
+
+      loadingEl.style.display = 'none';
+
+      btn.disabled = false;
+    }
+  }
+
+
+  // =========================================================
+  // QUICK ROAD SEARCH
+  // =========================================================
+
+  function quickSelectRoad(roadName) {
+
+    document.getElementById(
+      'roadSearchInput'
+    ).value = roadName;
+
+    searchIndiaRoad();
+  }
+
+
+  // =========================================================
+  // ROAD TRAFFIC MODEL
+  // =========================================================
+
+  function computeAccurateRoadTrafficData(
+    query,
+    geo
+  ) {
+
+    const qLower =
+      query.toLowerCase();
+
+    let roadName = query;
+    let city = 'India';
+    let state = 'India';
+    let lat = 20.5937;
+    let lon = 78.9629;
+    let osmType = 'primary';
+
+
+    if (geo) {
+
+      lat =
+        parseFloat(geo.lat);
+
+      lon =
+        parseFloat(geo.lon);
+
+      osmType =
+        geo.type ||
+        geo.class ||
+        'primary';
+
+      const addr =
+        geo.address || {};
+
+      const roadPart =
+        addr.road ||
+        addr.highway ||
+        addr.pedestrian ||
+        addr.suburb ||
+        geo.display_name.split(',')[0];
+
+      city =
+        addr.city ||
+        addr.town ||
+        addr.municipality ||
+        addr.district ||
+        addr.state_district ||
+        'India';
+
+      state =
+        addr.state ||
+        'India';
+
+      roadName =
+        `${roadPart}, ${city}, ${state}`;
+
+    } else {
+
+      const majorCities = [
+        'delhi',
+        'mumbai',
+        'bengaluru',
+        'bangalore',
+        'chennai',
+        'kolkata',
+        'hyderabad',
+        'pune',
+        'ahmedabad',
+        'jaipur',
+        'lucknow',
+        'kanpur',
+        'nagpur',
+        'indore',
+        'chandigarh',
+        'patiala',
+        'bhopal',
+        'kochi',
+        'surat',
+        'vadodara',
+        'gurugram',
+        'noida'
+      ];
+
+      for (const c of majorCities) {
+
+        if (qLower.includes(c)) {
+
+          city =
+            c.charAt(0).toUpperCase() +
+            c.slice(1);
+
+          roadName =
+            `${query}`;
+
+          break;
+        }
+      }
+    }
+
+
+    const isExpressway =
+      qLower.includes('highway') ||
+      qLower.includes('expressway') ||
+      qLower.includes('nh-') ||
+      qLower.includes('nh ') ||
+      qLower.includes('bypass') ||
+      osmType === 'motorway' ||
+      osmType === 'trunk';
+
+
+    const isMajorArterial =
+      qLower.includes('ring road') ||
+      qLower.includes('outer') ||
+      qLower.includes('inner') ||
+      qLower.includes('marg') ||
+      qLower.includes('salai') ||
+      qLower.includes('main road') ||
+      qLower.includes('flyover') ||
+      osmType === 'primary';
+
+
+    const isJunctionT =
+      qLower.includes('t-junction') ||
+      qLower.includes('tri-junction') ||
+      qLower.includes('3-way') ||
+      qLower.includes('fork');
+
+
+    const isChowk =
+      qLower.includes('chowk') ||
+      qLower.includes('circle') ||
+      qLower.includes('square') ||
+      qLower.includes('roundabout') ||
+      qLower.includes('junction');
+
+
+    let category =
+      'City Secondary Corridor';
+
+    let trafficTier =
+      'Standard Peak Demand';
+
+    let cycleLength = 100;
+
+    let approaches =
+      isJunctionT
+        ? ['north', 'east', 'south']
+        : ['north', 'south', 'east', 'west'];
+
+    let vehicles = {};
+
+    const hashSeed =
+      Math.abs(
+        hashCode(roadName)
+      );
+
+
+    if (isExpressway) {
+
+      category =
+        'National Highway / Express Corridor (IRC Tier-1)';
+
+      trafficTier =
+        'High Saturation Velocity Flow';
+
+      cycleLength = 130;
+
+      const mainBase =
+        1450 + (hashSeed % 350);
+
+      const sideBase =
+        420 + (hashSeed % 140);
+
+      vehicles =
+        isJunctionT
+          ? {
+              north: mainBase,
+              east: sideBase,
+              south: mainBase - 80
+            }
+          : {
+              north: mainBase,
+              south: mainBase - 50,
+              east: sideBase + 30,
+              west: sideBase
+            };
+
+    } else if (isMajorArterial) {
+
+      category =
+        'Major Urban Arterial (IRC Class-A)';
+
+      trafficTier =
+        'Heavy Peak Metropolitan Demand';
+
+      cycleLength = 115;
+
+      const mainBase =
+        920 + (hashSeed % 260);
+
+      const sideBase =
+        540 + (hashSeed % 160);
+
+      vehicles =
+        isJunctionT
+          ? {
+              north: mainBase,
+              east: sideBase,
+              south: mainBase - 60
+            }
+          : {
+              north: mainBase,
+              south: mainBase - 40,
+              east: sideBase,
+              west: sideBase - 30
+            };
+
+    } else if (isChowk) {
+
+      category =
+        'Commercial Chowk / Multi-Arm Interchange';
+
+      trafficTier =
+        'Continuous Multi-Approach Rotary Flow';
+
+      cycleLength = 110;
+
+      const base =
+        670 + (hashSeed % 220);
+
+      vehicles =
+        isJunctionT
+          ? {
+              north: base + 60,
+              east: base - 40,
+              south: base
+            }
+          : {
+              north: base + 90,
+              south: base + 40,
+              east: base - 50,
+              west: base - 80
+            };
+
+    } else {
+
+      category =
+        'Urban Collector & Distributor Road';
+
+      trafficTier =
+        'Regular Urban Approach Flow';
+
+      cycleLength = 95;
+
+      const base =
+        440 + (hashSeed % 180);
+
+      vehicles =
+        isJunctionT
+          ? {
+              north: base + 40,
+              east: base - 50,
+              south: base
+            }
+          : {
+              north: base + 50,
+              south: base + 20,
+              east: base - 60,
+              west: base - 90
+            };
+    }
+
+
+    return {
+      id: 'road_' + hashSeed,
+      name: roadName,
+      shortName:
+        roadName.length > 32
+          ? roadName.slice(0, 30) + '...'
+          : roadName,
+      city: city,
+      state: state,
+      lat: lat,
+      lon: lon,
+      category: category,
+      trafficTier: trafficTier,
+      cycleLength: cycleLength,
+      approaches: approaches,
+      vehicles: vehicles
+    };
+  }
+
+
+  // =========================================================
+  // APPLY SEARCHED ROAD
+  // =========================================================
+
+  function applyCustomRoadIntersection(
+    roadData
+  ) {
+
+    const existingIdx =
+      customIntersections.findIndex(
+        i => i.id === roadData.id
+      );
+
+    if (existingIdx === -1) {
+
+      customIntersections.unshift(
+        roadData
+      );
+
+    } else {
+
+      customIntersections[
+        existingIdx
+      ] = roadData;
+    }
+
+
+    const select =
+      document.getElementById(
+        'intersectionSelect'
+      );
+
+    let opt =
+      Array.from(
+        select.options
+      ).find(
+        o => o.value === roadData.id
+      );
+
+
+    if (!opt) {
+
+      opt =
+        document.createElement(
+          'option'
+        );
+
+      opt.value =
+        roadData.id;
+
+      opt.textContent =
+        `📍 [Searched] ${roadData.name}`;
+
+      select.insertBefore(
+        opt,
+        select.firstChild
+      );
+    }
+
+
+    select.value =
+      roadData.id;
+
+
+    applyIntersectionPreset(
+      roadData
+    );
+
+    recalculateSignalTimings();
+
+
+    displayRoadResultBanner(
+      roadData
+    );
+
+
+    document.getElementById(
+      'roadSearchInput'
+    ).value =
+      roadData.name;
+
+
+    document
+      .querySelectorAll(
+        '.road-quick-chip'
+      )
+      .forEach(chip => {
+
+        const text =
+          chip.textContent.toLowerCase();
+
+        if (
+          roadData.shortName &&
+          (
+            text.includes(
+              roadData.shortName.toLowerCase()
+            ) ||
+            roadData.name
+              .toLowerCase()
+              .includes(
+                text
+                  .split('(')[0]
+                  .trim()
+              )
+          )
+        ) {
+
+          chip.classList.add(
+            'active'
+          );
+
+        } else {
+
+          chip.classList.remove(
+            'active'
+          );
+        }
+      });
+
+
+    showToast(
+      'Road Signal Loaded',
+      `Configured optimal timings for ${roadData.name}.`
+    );
+  }
+
+
+  // =========================================================
+  // ROAD RESULT BANNER
+  // =========================================================
+
+  function displayRoadResultBanner(
+    roadData
+  ) {
+
+    const banner =
+      document.getElementById(
+        'roadResultBanner'
+      );
+
+    banner.style.display =
+      'flex';
+
+
+    document.getElementById(
+      'resRoadName'
+    ).textContent =
+      roadData.name;
+
+
+    document.getElementById(
+      'resRoadBadge'
+    ).textContent =
+      roadData.category;
+
+
+    document.getElementById(
+      'resStateBadge'
+    ).textContent =
+      roadData.state ||
+      roadData.city ||
+      'India';
+
+
+    const latFmt =
+      roadData.lat
+        ? (
+            Math.abs(
+              roadData.lat
+            ).toFixed(4) +
+            (
+              roadData.lat >= 0
+                ? '° N'
+                : '° S'
+            )
+          )
+        : '';
+
+
+    const lonFmt =
+      roadData.lon
+        ? (
+            Math.abs(
+              roadData.lon
+            ).toFixed(4) +
+            (
+              roadData.lon >= 0
+                ? '° E'
+                : '° W'
+            )
+          )
+        : '';
+
+
+    // IMPORTANT:
+    // Use current time-adjusted demand here
+    // instead of the static base demand.
+
+    const adjustedVehicles =
+      getTimeAdjustedVehicles(
+        roadData.vehicles
+      );
+
+
+    const totalVeh =
+      Object.values(
+        adjustedVehicles
+      ).reduce(
+        (a, b) => a + b,
+        0
+      );
+
+
+    document.getElementById(
+      'resRoadMeta'
+    ).innerHTML =
+      `
+      ${
+        latFmt
+          ? `Coordinates:
+             <strong style="color:#C4B5FD;">
+               ${latFmt}, ${lonFmt}
+             </strong> &bull; `
+          : ''
+      }
+      Total Demand:
+      <strong style="color:#34D399;">
+        ${totalVeh.toLocaleString()} veh/hr
+      </strong>
+      &bull;
+      Traffic Tier:
+      <strong style="color:#FBBF24;">
+        ${roadData.trafficTier}
+      </strong>
+      `;
+
+
+    document.getElementById(
+      'resCycleLen'
+    ).textContent =
+      roadData.cycleLength;
+  }
+
+
+  // =========================================================
+  // HASH FUNCTION
+  // =========================================================
+
+  function hashCode(str) {
+
+    let hash = 0;
+
+    for (
+      let i = 0;
+      i < (str || '').length;
+      i++
+    ) {
+
+      hash =
+        (hash << 5) -
+        hash +
+        str.charCodeAt(i);
+
+      hash |= 0;
+    }
+
+    return hash;
+  }
+
+
+  // =========================================================
+  // APPLY INTERSECTION PRESET
+  // =========================================================
+
+  function applyIntersectionPreset(
+    intersection
+  ) {
+
+    currentCycleLength =
+      intersection.cycleLength;
+
+    currentApproaches =
+      intersection.approaches;
+
+
+    // Get demand according to current time
+    const timeAdjustedVehicles =
+      getTimeAdjustedVehicles(
+        intersection.vehicles
+      );
+
+
+    const minGreen =
+      currentApproaches.length === 3
+        ? 12
+        : 10;
+
+
+    const totalDemand =
+      currentApproaches.reduce(
+        (sum, dir) =>
+          sum +
+          timeAdjustedVehicles[dir],
+        0
+      );
+
+
+    const avgShare =
+      1 /
+      currentApproaches.length;
+
+
+    const maxGreen =
+      Math.max(
+        minGreen + 5,
+        currentCycleLength -
+          minGreen *
+          (
+            currentApproaches.length - 1
+          )
+      );
+
+
+    approachBaseline = {};
+
+
+    currentApproaches.forEach(
+      dir => {
+
+        const baseDemand =
+          timeAdjustedVehicles[dir];
+
+
+        const share =
+          baseDemand /
+          totalDemand;
+
+
+        let demandLabel =
+          'Low Demand';
+
+
+        if (share >= 0.35) {
+
+          demandLabel =
+            'Heavy Demand';
+
+        } else if (share >= 0.22) {
+
+          demandLabel =
+            'Moderate-High';
+
+        } else if (share >= 0.12) {
+
+          demandLabel =
+            'Low-Moderate';
+        }
+
+
+        approachBaseline[dir] = {
+
+          baseDemand:
+            baseDemand,
+
+          baselineGreen:
+            Math.max(
+              minGreen,
+              Math.round(
+                share *
+                currentCycleLength
+              )
+            ),
+
+          demandLabel:
+            demandLabel,
+
+          isHeavier:
+            share >= avgShare
+        };
+      }
+    );
+
+
+    ALL_DIRECTIONS.forEach(
+      dir => {
+
+        const cap =
+          dir.charAt(0).toUpperCase() +
+          dir.slice(1);
+
+        const present =
+          currentApproaches.includes(
+            dir
+          );
+
+
+        document.getElementById(
+          `approachTag${cap}`
+        ).style.display =
+          present ? '' : 'none';
+
+
+        document.getElementById(
+          `row${cap}`
+        ).style.display =
+          present ? '' : 'none';
+
+
+        document.getElementById(
+          `light${cap}`
+        ).style.visibility =
+          present
+            ? 'visible'
+            : 'hidden';
+
+
+        if (present) {
+
+          const slider =
+            document.getElementById(
+              `slider${cap}`
+            );
+
+
+          slider.min =
+            minGreen;
+
+          slider.max =
+            maxGreen;
+
+
+          /*
+            Automatically update the slider
+            to the new optimal green time
+            whenever traffic changes.
+          */
+
+          slider.value =
+            Math.min(
+              approachBaseline[dir]
+                .baselineGreen,
+              maxGreen
+            );
+        }
+      }
+    );
+
+
+    document.getElementById(
+      'diagIntersectionName'
+    ).textContent =
+      intersection.name;
+
+
+    document.getElementById(
+      'diagJunctionType'
+    ).textContent =
+      currentApproaches.length === 3
+        ? '3-Way (T-Junction)'
+        : `${currentApproaches.length}-Way`;
+
+
+    document.getElementById(
+      'diagCycleTime'
+    ).textContent =
+      intersection.cycleLength;
+
+
+    document.getElementById(
+      'controlsIntersectionName'
+    ).textContent =
+      intersection.name;
+
+
+    recalculateSignalTimings();
+  }
+
+
+  // =========================================================
+  // EMERGENCY STATE
+  // =========================================================
+
+  function checkEmergencyState() {
+
+    const em =
+      window.UrbanFlowData.getActiveEmergency();
+
+    const banner =
+      document.getElementById(
+        'tmEmergencyNotice'
+      );
+
+    if (em) {
+
+      banner.style.display =
+        'flex';
+
+    } else {
+
+      banner.style.display =
+        'none';
+    }
+  }
+
+
+  function resetEmergencyPreemption() {
+
+    window.UrbanFlowData.setEmergency(
+      null
+    );
+
+    const signals =
+      window.UrbanFlowData.getSignals();
+
+    signals.emergencyPreemption =
+      false;
+
+    signals.emergencyApproach =
+      null;
+
+    window.UrbanFlowData.updateSignals(
+      signals
+    );
+
+    checkEmergencyState();
+
+    recalculateSignalTimings();
+
+    showToast(
+      'Override Released',
+      'Intersection restored to dynamic traffic queue mode.'
+    );
+  }
+
+
+  // =========================================================
+  // SIGNAL CALCULATION
+  // =========================================================
+
+  function recalculateSignalTimings() {
+
+    currentApproaches.forEach(
+      dir => {
+
+        const cap =
+          dir.charAt(0).toUpperCase() +
+          dir.slice(1);
+
+
+        const baseline =
+          approachBaseline[dir];
+
+
+        if (!baseline) {
+          return;
+        }
+
+
+        const slider =
+          document.getElementById(
+            `slider${cap}`
+          );
+
+
+        if (!slider) {
+          return;
+        }
+
+
+        const green =
+          parseInt(
+            slider.value,
+            10
+          );
+
+
+        /*
+          More green time = fewer waiting vehicles.
+          Less green time = larger queue.
+        */
+
+        const vehicles =
+          Math.max(
+            0,
+            Math.round(
+              baseline.baseDemand *
+              (
+                baseline.baselineGreen /
+                green
+              )
+            )
+          );
+
+
+        const queueMeters =
+          Math.round(
+            vehicles * 0.14
+          );
+
+
+        const isHeavier =
+          green >=
+          baseline.baselineGreen;
+
+
+        document.getElementById(
+          `demand${cap}`
+        ).textContent =
+          `(${baseline.demandLabel})`;
+
+
+        document.getElementById(
+          `diag${cap}Count`
+        ).textContent =
+          `${vehicles} vehicles`;
+
+
+        document.getElementById(
+          `txt${cap}Vehicles`
+        ).textContent =
+          `${vehicles} vehicles • Queue: ${queueMeters}m`;
+
+
+        const diagGreenEl =
+          document.getElementById(
+            `diag${cap}Green`
+          );
+
+
+        diagGreenEl.textContent =
+          `Green: ${green}s`;
+
+
+        diagGreenEl.style.color =
+          isHeavier
+            ? ''
+            : '#EF4444';
+
+
+        const badgeEl =
+          document.getElementById(
+            `badge${cap}Green`
+          );
+
+
+        badgeEl.textContent =
+          `${green}s Green`;
+
+
+        badgeEl.className =
+          'appr-badge ' +
+          (
+            isHeavier
+              ? 'green'
+              : 'red'
+          );
+      }
+    );
+  }
+
+
+  // =========================================================
+  // MANUAL SIGNAL OVERRIDES
+  // =========================================================
+
+  function forcePhase(phase) {
+
+    if (phase === 'north-south') {
+
+      document.getElementById(
+        'lightNorth'
+      ).className =
+        'mini-light green';
+
+      document.getElementById(
+        'lightSouth'
+      ).className =
+        'mini-light green';
+
+      document.getElementById(
+        'lightEast'
+      ).className =
+        'mini-light red';
+
+      document.getElementById(
+        'lightWest'
+      ).className =
+        'mini-light red';
+
+
+      showToast(
+        'Manual Override Active',
+        'North-South approaches locked to Green.'
+      );
+
+    } else {
+
+      document.getElementById(
+        'lightNorth'
+      ).className =
+        'mini-light red';
+
+      document.getElementById(
+        'lightSouth'
+      ).className =
+        'mini-light red';
+
+      document.getElementById(
+        'lightEast'
+      ).className =
+        'mini-light green';
+
+      document.getElementById(
+        'lightWest'
+      ).className =
+        'mini-light green';
+
+
+      showToast(
+        'Manual Override Active',
+        'East-West approaches locked to Green.'
+      );
+    }
+  }
+
+
+  function resetAdaptiveMode() {
+
+    document.getElementById(
+      'lightNorth'
+    ).className =
+      'mini-light green';
+
+    document.getElementById(
+      'lightSouth'
+    ).className =
+      'mini-light green';
+
+    document.getElementById(
+      'lightEast'
+    ).className =
+      'mini-light red';
+
+    document.getElementById(
+      'lightWest'
+    ).className =
+      'mini-light red';
+
+
+    recalculateSignalTimings();
+
+
+    showToast(
+      'Adaptive Mode Restored',
+      'Signals are now optimizing dynamically based on vehicle count.'
+    );
+  }
+
+
+  // =========================================================
+  // INCIDENT QUEUE
+  // =========================================================
+
+  function renderIncidentQueue() {
+
+    const tbody =
+      document.getElementById(
+        'tmIncidentTableBody'
+      );
+
+    const incidents =
+      window.UrbanFlowData.getIncidents();
+
+    tbody.innerHTML = '';
+
+
+    incidents.forEach(
+      inc => {
+
+        const tr =
+          document.createElement(
+            'tr'
+          );
+
+
+        const sevClass =
+          inc.severity
+            ? inc.severity.toLowerCase()
+            : 'minor';
+
+
+        tr.innerHTML =
+          `
+          <td>
+            <strong>${inc.id}</strong>
+          </td>
+
+          <td>
+            ${escapeHtml(inc.type)}
+          </td>
+
+          <td>
+            ${escapeHtml(inc.road)}
+          </td>
+
+          <td>
+            <span class="severity-pill ${sevClass}">
+              ${inc.severity}
+            </span>
+          </td>
+
+          <td>
+            ${inc.reportedAt}
+          </td>
+
+          <td>
+            <strong style="color:${getIncidentStatusColor(inc.status)}">
+              ${inc.status}
+            </strong>
+          </td>
+
+          <td>
+
+            <button
+              class="chip"
+              onclick="verifyInc('${inc.id}')"
+              style="background:#ECFDF5; color:#065F46; border:none; margin-right:4px;">
+              Verify
+            </button>
+
+            <button
+              class="chip"
+              onclick="markInProgress('${inc.id}')"
+              style="background:#FEF3C7; color:#92400E; border:none; margin-right:4px;">
+              In Progress
+            </button>
+
+            <button
+              class="chip"
+              onclick="resolveInc('${inc.id}')"
+              style="background:#F3F4F6; color:#374151; border:none;">
+              Resolve
+            </button>
+
+          </td>
+          `;
+
+
+        tbody.appendChild(
+          tr
+        );
+      }
+    );
+  }
+
+
+  function getIncidentStatusColor(
+    status
+  ) {
+
+    switch (status) {
+
+      case 'Verified':
+        return '#059669';
+
+      case 'In Progress':
+        return '#2563EB';
+
+      case 'Resolved':
+        return '#6B7280';
+
+      default:
+        return '#D97706';
+    }
+  }
+
+
+  function verifyInc(id) {
+
+    window.UrbanFlowData
+      .updateIncidentStatus(
+        id,
+        'Verified'
+      );
+
+    renderIncidentQueue();
+
+    showToast(
+      'Incident Verified',
+      `${id} has been verified and broadcast to navigation algorithms.`
+    );
+  }
+
+
+  function markInProgress(id) {
+
+    window.UrbanFlowData
+      .updateIncidentStatus(
+        id,
+        'In Progress'
+      );
+
+    renderIncidentQueue();
+
+    showToast(
+      'Incident In Progress',
+      `${id} marked as in progress — a response crew is being coordinated.`
+    );
+  }
+
+
+  function resolveInc(id) {
+
+    window.UrbanFlowData
+      .updateIncidentStatus(
+        id,
+        'Resolved'
+      );
+
+    renderIncidentQueue();
+
+    showToast(
+      'Incident Resolved',
+      `${id} marked as cleared. Road segment traffic returned to normal.`
+    );
+  }
+
+
+  // =========================================================
+  // HTML ESCAPE
+  // =========================================================
+
+  function escapeHtml(str) {
+
+    return (str || '').replace(
+      /[&<>'"]/g,
+
+      tag =>
+        ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+    );
+  }
+
+</script>
+
+</body>
+</html>

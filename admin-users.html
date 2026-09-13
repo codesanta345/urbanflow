@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Access Management | Urban Flow Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .admin-action-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .admin-action-btn.success { background: #10B981; color: white; }
+    .admin-action-btn.danger { background: #EF4444; color: white; }
+    .admin-action-btn:hover { opacity: 0.9; }
+
+    /* Modal Styling */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+    .admin-modal {
+      background: #141524;
+      color: #fff;
+      width: 100%;
+      max-width: 500px;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .input-group input, .input-group select {
+      background: #0B0C10 !important;
+      color: #fff !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
+    }
+  </style>
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="admin.html" class="nav-logo-link">
+      <i class="fa-solid fa-arrow-left"></i> Hub
+    </a>
+    <span class="nav-pill-role" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); color:#2563EB;">
+      Users & Logins
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar" style="background:#2563EB;">A</div>
+          <span id="navUserName">Admin</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Administrator Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="hub-main" style="max-width: 1000px; margin: 0 auto;">
+    <div class="hub-welcome">
+      <div>
+        <h1>Users and Traffic Managers</h1>
+        <p>Monitor system access, roles, and review recent logins from users and officials.</p>
+      </div>
+      <div>
+        <button onclick="fetchUsersFromDB()" class="admin-action-btn" style="background:#4F46E5; color: white;">
+          <i class="fa-solid fa-rotate"></i> Refresh MongoDB Sync
+        </button>
+      </div>
+    </div>
+
+    <!-- Users Access Matrix -->
+    <div class="admin-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;">
+          <span><i class="fa-solid fa-users-gear" style="color: var(--purple);"></i> Login History & System Privileges</span>
+        </h3>
+        
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="algo-table">
+          <thead>
+            <tr>
+              <th>User Name</th>
+              <th>Assigned Role</th>
+              <th>Access Level</th>
+              <th>Permissions</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="accessMatrixBody">
+            <tr>
+              <td colspan="6" style="text-align:center; padding:16px; color:#64748B;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Fetching operators from database...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchUsersFromDB();
+      // Auto-refresh for real-time tracking
+      setInterval(fetchUsersFromDB, 5000);
+    });
+
+    let liveUsers = [];
+
+    async function fetchUsersFromDB() {
+      const tbody = document.getElementById('accessMatrixBody');
+      if (liveUsers.length === 0) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:16px; color:#64748B;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching operators...</td></tr>';
+      try {
+        const res = await fetch('/api/users');
+        if (!res.ok) throw new Error('API offline');
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          liveUsers = json.data;
+        } else {
+          throw new Error('Invalid users data');
+        }
+      } catch (err) {
+        liveUsers = window.UrbanFlowData.getAccessMatrix(); // fallback
+      }
+      renderUsers(liveUsers);
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('accessMatrixBody');
+      tbody.innerHTML = '';
+      const badgeClass = { admin: 'admin', traffic_manager: 'authority', user: '' };
+
+      users.forEach(row => {
+        const id = row._id || '';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(row.displayName)}</strong></td>
+          <td><span class="hub-card-badge ${badgeClass[row.role] || ''}">${escapeHtml(row.roleTitle || row.role)}</span></td>
+          <td>${escapeHtml(row.accessLevel || 'Standard Access')}</td>
+          <td>${escapeHtml(row.permissions || 'Read only')}</td>
+          <td><span style="color:#059669; font-weight:600;">• ${escapeHtml(row.status || 'Active Login')}</span></td>
+          <td>
+            ${id ? `<button onclick="deleteUser('${id}')" class="admin-action-btn danger" style="padding:3px 8px; font-size:11px;"><i class="fa-solid fa-user-xmark"></i></button>` : '<span style="color:#94A3B8; font-size:11px;">Protected</span>'}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Revoke access and remove user from database?')) return;
+      try {
+        await fetch(`/api/users?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+        showToast('Access Revoked', 'User operator removed from MongoDB.');
+      } catch (e) {
+        showToast('Notice', 'Action simulated locally (DB disconnected).');
+      }
+      fetchUsersFromDB();
+    }
+
+    
+
+    
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>'"]/g,
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>

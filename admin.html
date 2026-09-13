@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Hub | Urban Flow</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Using global style.css for dark theme matching -->
+</head>
+<body class="dash-page">
+
+  <!-- ===== TOP NAV BAR ===== -->
+  <nav class="dash-nav">
+    <a href="admin.html" class="nav-logo-link">
+      <span>🚦</span> UrbanFlow
+    </a>
+    <span class="nav-pill-role" style="background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3); color:#2563EB;">
+      Admin Hub
+    </span>
+
+    <div class="spacer"></div>
+
+    <div class="dash-nav-links">
+      <div class="user-menu-wrap">
+        <button type="button" class="user-badge user-menu-trigger" onclick="toggleUserMenu(event)">
+          <div class="avatar-circle" id="navUserAvatar" style="background:#2563EB;">A</div>
+          <span id="navUserName">Admin</span>
+          <i class="fa-solid fa-chevron-down user-menu-caret"></i>
+        </button>
+        <div class="user-menu-dropdown">
+          <div class="user-menu-mode" id="navUserModeLabel">Administrator Mode</div>
+          <div class="user-menu-divider"></div>
+          <button type="button" class="user-menu-logout" onclick="UrbanFlowData.logout()">
+            <i class="fa-solid fa-right-from-bracket"></i> Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="hub-main" style="max-width: 1100px; margin: 0 auto;">
+    <div class="hub-welcome" style="margin-bottom: 24px;">
+      <div>
+        <h1>Central Administrator Control Center</h1>
+        <p>Manage citywide traffic predictions, verify reported incidents, and monitor system users.</p>
+      </div>
+    </div>
+
+    <div class="hub-cards-grid">
+      <!-- Feature 1: ML Prediction (Radar) -->
+      <a href="admin-radar.html" class="hub-card">
+        <div>
+          <div class="hub-card-header">
+            <div class="hub-card-icon" style="background: rgba(37, 99, 235, 0.18); border-color: rgba(37, 99, 235, 0.3); color: #60A5FA;">
+              <i class="fa-solid fa-satellite-dish"></i>
+            </div>
+            <span class="hub-card-badge" style="background: rgba(37, 99, 235, 0.2); color: #93C5FD;">Radar</span>
+          </div>
+          <h3>ML Traffic Prediction Map</h3>
+          <p>View natural city maps, dynamic congestion levels, and predictive traffic flow radar across city corridors.</p>
+        </div>
+        <div class="hub-card-action" style="color: #60A5FA;">
+          <span>Explore Traffic Radar</span>
+          <span><i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+      </a>
+
+      <!-- Feature 2: Incident Reports -->
+      <a href="admin-incidents.html" class="hub-card">
+        <div>
+          <div class="hub-card-header">
+            <div class="hub-card-icon" style="background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.3); color: #F87171;">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <span class="hub-card-badge admin">Alerts</span>
+          </div>
+          <h3>Incident Reports</h3>
+          <p>Monitor live accident reports. Admins can verify issues or delete fake/resolved incidents from the database.</p>
+        </div>
+        <div class="hub-card-action" style="color: #F87171;">
+          <span>Manage Incidents</span>
+          <span><i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+      </a>
+
+      <!-- Feature 3: Users & Traffic Managers -->
+      <a href="admin-users.html" class="hub-card">
+        <div>
+          <div class="hub-card-header">
+            <div class="hub-card-icon" style="background: rgba(124, 58, 237, 0.18); border-color: rgba(124, 58, 237, 0.3); color: #A78BFA;">
+              <i class="fa-solid fa-users-gear"></i>
+            </div>
+            <span class="hub-card-badge">Access</span>
+          </div>
+          <h3>Users & Traffic Managers</h3>
+          <p>View the login history and access table. See exactly which users and traffic managers have accessed the system.</p>
+        </div>
+        <div class="hub-card-action">
+          <span>Manage Users</span>
+          <span><i class="fa-solid fa-arrow-right"></i></span>
+        </div>
+      </a>
+    </div>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

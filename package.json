@@ -1,0 +1,9 @@
+{
+  "name": "urbanflow",
+  "version": "1.0.0",
+  "description": "UrbanFlow Traffic Management System with MongoDB & Vercel Serverless Functions",
+  "main": "index.html",
+  "dependencies": {
+    "mongodb": "^6.8.0"
+  }
+}
