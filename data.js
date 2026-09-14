@@ -336,11 +336,111 @@ const UrbanFlowData = (() => {
 
   // ML Predictions Data (Figure 7 in PDF)
   const ML_PREDICTIONS = [
-    { road: 'Road A (Phase 7 Chowk)', current: 'Medium', predicted: 'High', confidence: '92%', trend: 'Increasing (+28%)', peakTime: '05:30 PM' },
-    { road: 'Road B (Urban Estate Ring)', current: 'Low', predicted: 'Medium', confidence: '89%', trend: 'Slight Rise (+12%)', peakTime: '06:00 PM' },
-    { road: 'Road C (Main Bypass)', current: 'High', predicted: 'Severe', confidence: '95%', trend: 'Rapid Rise (+45%)', peakTime: '05:15 PM' },
-    { road: 'Road D (Mall Road)', current: 'Low', predicted: 'Low', confidence: '88%', trend: 'Stable (-2%)', peakTime: '07:30 PM' }
+  {
+    road: 'Road A (Phase 7 Chowk)',
+    current: 'Medium',
+    predicted: 'High',
+    confidence: '92%',
+    trend: 'Increasing (+28%)',
+    peakTime: '05:30 PM'
+  },
+  {
+    road: 'Road B (Urban Estate Ring)',
+    current: 'Low',
+    predicted: 'Medium',
+    confidence: '89%',
+    trend: 'Slight Rise (+12%)',
+    peakTime: '06:00 PM'
+  },
+  {
+    road: 'Road C (Main Bypass)',
+    current: 'High',
+    predicted: 'Severe',
+    confidence: '95%',
+    trend: 'Rapid Rise (+45%)',
+    peakTime: '05:15 PM'
+  },
+  {
+    road: 'Road D (Mall Road)',
+    current: 'Low',
+    predicted: 'Low',
+    confidence: '88%',
+    trend: 'Stable (-2%)',
+    peakTime: '07:30 PM'
+  }
+
+ 
+];
+
+function getTimeBasedMLPredictions() {
+  const hour = new Date().getHours();
+
+  // Morning peak: 6 AM - 9 AM
+  if (hour >= 6 && hour < 9) {
+    return [
+      { ...ML_PREDICTIONS[0], current: 'High', predicted: 'High', trend: 'Increasing (+25%)' },
+      { ...ML_PREDICTIONS[1], current: 'Medium', predicted: 'High', trend: 'Increasing (+18%)' },
+      { ...ML_PREDICTIONS[2], current: 'High', predicted: 'Severe', trend: 'Rapid Rise (+40%)' },
+      { ...ML_PREDICTIONS[3], current: 'Medium', predicted: 'Medium', trend: 'Slight Rise (+10%)' }
+    ];
+  }
+
+  // Morning: 9 AM - 12 PM
+  if (hour >= 9 && hour < 12) {
+    return [
+      { ...ML_PREDICTIONS[0], current: 'Medium', predicted: 'Medium', trend: 'Stable (+5%)' },
+      { ...ML_PREDICTIONS[1], current: 'Medium', predicted: 'Medium', trend: 'Stable (+4%)' },
+      { ...ML_PREDICTIONS[2], current: 'High', predicted: 'High', trend: 'Slight Rise (+12%)' },
+      { ...ML_PREDICTIONS[3], current: 'Low', predicted: 'Medium', trend: 'Slight Rise (+8%)' }
+    ];
+  }
+
+  // Afternoon: 12 PM - 4 PM
+  if (hour >= 12 && hour < 16) {
+    return [
+      { ...ML_PREDICTIONS[0], current: 'Low', predicted: 'Medium', trend: 'Slight Rise (+8%)' },
+      { ...ML_PREDICTIONS[1], current: 'Low', predicted: 'Low', trend: 'Stable (-3%)' },
+      { ...ML_PREDICTIONS[2], current: 'Medium', predicted: 'High', trend: 'Increasing (+15%)' },
+      { ...ML_PREDICTIONS[3], current: 'Low', predicted: 'Low', trend: 'Stable (-5%)' }
+    ];
+  }
+
+  // Evening peak: 4 PM - 7 PM
+  if (hour >= 16 && hour < 19) {
+    return [
+      { ...ML_PREDICTIONS[0], current: 'High', predicted: 'Severe', trend: 'Rapid Rise (+35%)' },
+      { ...ML_PREDICTIONS[1], current: 'Medium', predicted: 'High', trend: 'Increasing (+22%)' },
+      { ...ML_PREDICTIONS[2], current: 'High', predicted: 'Severe', trend: 'Rapid Rise (+45%)' },
+      { ...ML_PREDICTIONS[3], current: 'Medium', predicted: 'High', trend: 'Increasing (+20%)' }
+    ];
+  }
+
+  // Evening: 7 PM - 10 PM
+  if (hour >= 19 && hour < 22) {
+    return [
+      { ...ML_PREDICTIONS[0], current: 'Medium', predicted: 'Medium', trend: 'Stable (+3%)' },
+      { ...ML_PREDICTIONS[1], current: 'Medium', predicted: 'Medium', trend: 'Slight Rise (+7%)' },
+      { ...ML_PREDICTIONS[2], current: 'High', predicted: 'High', trend: 'Slight Rise (+10%)' },
+      { ...ML_PREDICTIONS[3], current: 'Medium', predicted: 'Medium', trend: 'Stable (+2%)' }
+    ];
+  }
+
+  // Night: 10 PM - 6 AM
+  return [
+    { ...ML_PREDICTIONS[0], current: 'Low', predicted: 'Low', trend: 'Decreasing (-15%)' },
+    { ...ML_PREDICTIONS[1], current: 'Low', predicted: 'Low', trend: 'Decreasing (-12%)' },
+    { ...ML_PREDICTIONS[2], current: 'Medium', predicted: 'Low', trend: 'Decreasing (-20%)' },
+    { ...ML_PREDICTIONS[3], current: 'Low', predicted: 'Low', trend: 'Stable (-5%)' }
   ];
+}
+function getCurrentMLTime() {
+  return new Date().toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  });
+}
 
   // NOTE: Per-route path geometry (Fastest / Shortest / Avoid Tolls) is no
   // longer a fixed Thapar-to-Bus-Stand table — route-details.html builds it
@@ -763,6 +863,7 @@ const UrbanFlowData = (() => {
     EMERGENCY_BASES,
     EMERGENCY_SITES,
     ML_PREDICTIONS,
+    getTimeBasedMLPredictions,
     getLandmarkOptions,
     getCityOptions,
     getEmergencyBaseOptions,
@@ -792,6 +893,8 @@ const UrbanFlowData = (() => {
     getCityData,
     findPlaceCoords,
     saveRouteQuery,
+    getTimeBasedMLPredictions,
+    getCurrentMLTime, 
     getLastRouteQuery
   };
 })();

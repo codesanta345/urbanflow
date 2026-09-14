@@ -395,6 +395,11 @@
         </span>
       </div>
     </div>
+    <div style="margin:8px 0 12px; display:flex; align-items:center; gap:8px; font-size:14px; color:#64748B;">
+  <i class="fa-regular fa-clock" style="color:#06B6D4;"></i>
+  <span>Current Time:</span>
+  <strong id="liveCurrentTime" style="color:#0F172A;">--:--:--</strong>
+</div>
 
     <!-- ===== CITY SEARCH & PRESETS BAR ===== -->
     <section class="city-search-strip">
@@ -1545,5 +1550,24 @@
       };
     }
   </script>
+  <script>
+function updateLiveTime() {
+  const timeElement = document.getElementById('liveCurrentTime');
+
+  if (timeElement) {
+    timeElement.textContent = new Date().toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateLiveTime();
+  setInterval(updateLiveTime, 1000);
+});
+</script>
 </body>
 </html>
