@@ -14,7 +14,8 @@ const UrbanFlowData = (() => {
     EMERGENCY_REQUESTS: 'uf_emergency_requests',
     SELECTED_CITY: 'uf_selected_city',
     LAST_ROUTE_QUERY: 'uf_last_route_query',
-    TOAST_FLAG: 'uf_show_login_toast'
+    TOAST_FLAG: 'uf_show_login_toast',
+    LOGIN_HISTORY: 'uf_login_history'
   };
 
   /**
@@ -541,6 +542,39 @@ function getCurrentMLTime() {
     };
   }
 
+  /**
+   * Local login history — a fallback record of who has signed in, kept in
+   * this browser's localStorage. MongoDB (via /api/users) is the real
+   * source of truth once deployed, but when the API is offline (e.g.
+   * running locally off a plain static server) the admin console falls
+   * back to this so every commuter who logged in still shows up, not just
+   * the hardcoded staff directory.
+   */
+  function getLoginHistory() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEYS.LOGIN_HISTORY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function addLoginHistoryEntry(session) {
+    const list = getLoginHistory().filter(
+      entry => normalizeName(entry.displayName) !== normalizeName(session.displayName)
+    );
+    list.unshift({
+      displayName: session.displayName,
+      username: session.username,
+      role: session.role,
+      roleTitle: session.roleTitle,
+      accessLevel: session.accessLevel,
+      permissions: session.permissions,
+      loginTime: session.loginTime
+    });
+    localStorage.setItem(STORAGE_KEYS.LOGIN_HISTORY, JSON.stringify(list.slice(0, 50)));
+  }
+
   function authenticate(userType, username, password) {
     const selectedRole = (userType || '').trim();
     const cleanUsername = (username || '').trim();
@@ -576,6 +610,7 @@ function getCurrentMLTime() {
 
     setCurrentUser(session);
     markLoginToast();
+    addLoginHistoryEntry(session);
 
     // Log user to database so Admin can track logins
     fetch('/api/users', {
@@ -669,7 +704,10 @@ function getCurrentMLTime() {
     }));
   }
 
-  // Access matrix rows for the admin console: the signed-in account plus known staff
+  // Access matrix rows for the admin console: the signed-in account, known
+  // staff, plus every commuter who has actually logged in on this browser
+  // (from local login history — see getLoginHistory) so the admin isn't
+  // left seeing only the hardcoded staff directory.
   function getAccessMatrix() {
     const current = getCurrentUser();
     const rows = [{
@@ -681,14 +719,32 @@ function getCurrentMLTime() {
       isCurrent: true
     }];
 
+    const seen = new Set([normalizeName(rows[0].displayName)]);
+
     ROLE_DIRECTORY.forEach(person => {
-      if (normalizeName(person.displayName) === normalizeName(rows[0].displayName)) return;
+      const key = normalizeName(person.displayName);
+      if (seen.has(key)) return;
+      seen.add(key);
       rows.push({
         displayName: person.displayName,
         roleTitle: person.roleTitle,
         role: person.role,
         accessLevel: person.accessLevel,
         permissions: person.permissions,
+        isCurrent: false
+      });
+    });
+
+    getLoginHistory().forEach(entry => {
+      const key = normalizeName(entry.displayName);
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push({
+        displayName: entry.displayName,
+        roleTitle: entry.roleTitle,
+        role: entry.role,
+        accessLevel: entry.accessLevel,
+        permissions: entry.permissions,
         isCurrent: false
       });
     });
@@ -877,6 +933,7 @@ function getCurrentMLTime() {
     shouldShowLoginToast,
     logout,
     authenticate,
+    getLoginHistory,
     searchLandmarks,
     getIncidents,
     addIncident,

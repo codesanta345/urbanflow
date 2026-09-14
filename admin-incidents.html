@@ -143,13 +143,13 @@
       </div>
       <div>
         <button onclick="fetchIncidentsFromDB()" class="admin-action-btn" style="background:#4F46E5; color: white;">
-          <i class="fa-solid fa-rotate"></i> Refresh MongoDB Sync
+          <i class="fa-solid fa-rotate" id="syncRefreshIcon"></i> Refresh MongoDB Sync
         </button>
       </div>
     </div>
 
-    <!-- MongoDB Live Status Banner -->
-    <div class="db-status-bar">
+    <!-- MongoDB Live Status Banner (hidden, auto-sync runs silently in the background) -->
+    <div class="db-status-bar" style="display:none;">
       <div style="display:flex; align-items:center; gap:12px;">
         <span class="db-badge" id="dbStatusBadge">
           <span class="pulse-dot"></span>
@@ -200,9 +200,15 @@
     }
 
     async function fetchIncidentsFromDB() {
+      const icon = document.getElementById('syncRefreshIcon');
+      if (icon) {
+        icon.classList.add('fa-spin');
+        setTimeout(() => icon.classList.remove('fa-spin'), 800);
+      }
+
       const container = document.getElementById('adminIncidentsContainer');
       if (liveIncidents.length === 0) container.innerHTML = '<div style="text-align:center; padding:20px; color:#64748B;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching incidents...</div>';
-      
+
       try {
         const res = await fetch('/api/incidents');
         if (!res.ok) throw new Error('API offline or 404');
